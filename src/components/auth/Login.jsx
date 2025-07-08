@@ -4,7 +4,7 @@ import { Eye, EyeOff, Lock, Mail, Loader2 } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import ThemeToggle from "../ThemeToggle";
 import { useAuth } from "../../hooks/useAuth";
-import fitnessImg from "../../assets/images/notdark.png"; // Use your own image or replace with a real one
+import fitnessImg from "../../assets/images/Sign up-amico.png"
 import { useTheme } from "../../context/ThemeContext";
 
 // Google Sign-In
@@ -48,7 +48,7 @@ const CustomInputWithIcon = ({
   type = "text",
   showPassword,
   onTogglePassword,
-  isFocused,
+
   onFocus,
   onBlur,
   autoCapitalize,

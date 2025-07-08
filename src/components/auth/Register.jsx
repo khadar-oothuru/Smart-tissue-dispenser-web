@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { Eye, EyeOff, Lock, Mail, User, Loader2 } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import { useAuth } from "../../hooks/useAuth";
-import logoImg from "../../assets/images/notlight2.png";
+import logoImg from "../../assets/images/Tablet login-amico.png";
 import { useTheme } from "../../context/ThemeContext";
 
 // Google Sign-In
