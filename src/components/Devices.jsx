@@ -337,7 +337,7 @@ const AddDeviceModal = ({
       setFormData({
         name: editingDevice.name || "",
         room_number: editingDevice.room_number || "",
-        floor_number: editingDevice.floor_number || "",
+        floor_number: editingDevice.floor_number?.toString() || "",
         tissue_type: editingDevice.tissue_type || "hand_towel",
         gender: editingDevice.gender || "male",
         meter_capacity: editingDevice.meter_capacity || 500,
@@ -360,9 +360,10 @@ const AddDeviceModal = ({
     if (!formData.name.trim()) newErrors.name = "Device name is required";
     if (!formData.room_number.trim())
       newErrors.room_number = "Room number is required";
-    if (!formData.floor_number.trim())
+    const floorNumberStr = formData.floor_number?.toString() || "";
+    if (!floorNumberStr.trim())
       newErrors.floor_number = "Floor number is required";
-    else if (isNaN(parseInt(formData.floor_number, 10)))
+    else if (isNaN(parseInt(floorNumberStr, 10)))
       newErrors.floor_number = "Floor number must be a valid number";
     const meterCapacityNum = parseInt(formData.meter_capacity, 10);
     if (!formData.meter_capacity.toString().trim())
@@ -379,7 +380,8 @@ const AddDeviceModal = ({
 
   const handleChange = (field, value) => {
     let processedValue = value;
-    if (field === "meter_capacity") {
+    if (field === "meter_capacity" || field === "floor_number") {
+      // For numeric fields, remove non-numeric characters and convert to integer if not empty
       processedValue = value.replace(/[^0-9]/g, "");
       processedValue =
         processedValue === "" ? "" : parseInt(processedValue, 10);
@@ -810,12 +812,12 @@ const AddDeviceModal = ({
 // Device Card Component - matches mobile app's DeviceCard
 const DeviceCard = ({ device, onEdit, onDelete }) => {
   const { themeColors, isDark } = useTheme();
+  // Only render if device has a valid id
+  if (!device || !device.id) return null;
   return (
     <div
       className="rounded-2xl shadow-lg p-7 mb-6 flex items-center justify-between bg-gradient-to-tr from-blue-50 via-white to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 border border-gray-200 dark:border-gray-700 transition-transform duration-200 hover:scale-[1.02] hover:shadow-2xl group"
-      style={{
-        color: themeColors.text,
-      }}
+      style={{ color: themeColors.text }}
     >
       <div className="flex items-center space-x-5">
         <div
@@ -848,13 +850,16 @@ const DeviceCard = ({ device, onEdit, onDelete }) => {
         >
           <Edit className="h-5 w-5" />
         </button>
-        <button
-          onClick={() => onDelete(device)}
-          className="hover:scale-110 hover:bg-red-100 dark:hover:bg-red-900 p-2 rounded-full transition-all duration-200"
-          style={{ color: themeColors.danger }}
-        >
-          <Trash2 className="h-5 w-5" />
-        </button>
+        {/* Only show delete button if device has a valid id */}
+        {device.id && (
+          <button
+            onClick={() => onDelete(device)}
+            className="hover:scale-110 hover:bg-red-100 dark:hover:bg-red-900 p-2 rounded-full transition-all duration-200"
+            style={{ color: themeColors.danger }}
+          >
+            <Trash2 className="h-5 w-5" />
+          </button>
+        )}
       </div>
     </div>
   );
@@ -931,13 +936,12 @@ const Devices = () => {
   const filteredDevices = React.useMemo(() => {
     const deviceList = Array.isArray(mergedDevices) ? mergedDevices : [];
 
-    let filteredList = deviceList;
+    // Only keep devices with a valid id
+    let filteredList = deviceList.filter((device) => device && device.id);
 
     if (searchTerm && searchTerm.trim() !== "") {
       const term = searchTerm.toLowerCase().trim();
-      filteredList = deviceList.filter((device) => {
-        if (!device) return false;
-
+      filteredList = filteredList.filter((device) => {
         const nameMatch = device.name?.toLowerCase()?.includes(term) || false;
         const roomMatch =
           device.room_number?.toString()?.toLowerCase()?.includes(term) ||
@@ -1192,10 +1196,31 @@ const Devices = () => {
   const handleDeviceDelete = useCallback(
     async (device) => {
       if (!accessToken) {
-        throw new Error("No authentication token available");
+        setModalContent({
+          title: "Error",
+          message: "No authentication token available.",
+          type: "error",
+          primaryAction: {
+            text: "OK",
+            onPress: () => setShowErrorModal(false),
+          },
+        });
+        setShowErrorModal(true);
+        return false;
       }
       if (!device || !device.id) {
-        throw new Error("Invalid device data");
+        setModalContent({
+          title: "Error",
+          message:
+            "Device information is missing or invalid. Please try again.",
+          type: "error",
+          primaryAction: {
+            text: "OK",
+            onPress: () => setShowErrorModal(false),
+          },
+        });
+        setShowErrorModal(true);
+        return false;
       }
       setLoading(true);
       try {
@@ -1225,46 +1250,52 @@ const Devices = () => {
   const handleDeleteDeviceConfirm = useCallback((device) => {
     setModalContent({
       title: "Delete Device",
-      message: `Are you sure you want to delete "${device.name}"?`,
+      message: `Are you sure you want to delete \"${device.name}\"?`,
       type: "error",
-      primaryAction: { text: "Delete", onPress: confirmDeleteDevice },
+      primaryAction: {
+        text: "Delete",
+        onPress: () => confirmDeleteDevice(device),
+      },
       secondaryAction: {
         text: "Cancel",
         onPress: () => setShowDeleteConfirmModal(false),
       },
-      deviceToDelete: device,
     });
     setShowDeleteConfirmModal(true);
   }, []);
 
-  const confirmDeleteDevice = useCallback(async () => {
-    const device = modalContent.deviceToDelete;
-    setShowDeleteConfirmModal(false);
-
-    try {
-      const success = await handleDeviceDelete(device);
-      if (success) {
+  const confirmDeleteDevice = useCallback(
+    async (device) => {
+      setShowDeleteConfirmModal(false);
+      try {
+        const success = await handleDeviceDelete(device);
+        if (success) {
+          setModalContent({
+            title: "Success!",
+            message: "Device deleted successfully and synced across all views",
+            type: "success",
+            primaryAction: {
+              text: "Got it",
+              onPress: () => setShowSuccessModal(false),
+            },
+          });
+          setShowSuccessModal(true);
+        }
+      } catch (error) {
         setModalContent({
-          title: "Success!",
-          message: "Device deleted successfully and synced across all views",
-          type: "success",
+          title: "Error",
+          message: error.message || "Failed to delete device",
+          type: "error",
           primaryAction: {
-            text: "Got it",
-            onPress: () => setShowSuccessModal(false),
+            text: "OK",
+            onPress: () => setShowErrorModal(false),
           },
         });
-        setShowSuccessModal(true);
+        setShowErrorModal(true);
       }
-    } catch (error) {
-      setModalContent({
-        title: "Error",
-        message: error.message || "Failed to delete device",
-        type: "error",
-        primaryAction: { text: "OK", onPress: () => setShowErrorModal(false) },
-      });
-      setShowErrorModal(true);
-    }
-  }, [modalContent.deviceToDelete, handleDeviceDelete]);
+    },
+    [handleDeviceDelete]
+  );
 
   // Handle edit device - matches mobile app's edit handler
   const handleEditDevice = useCallback((device) => {

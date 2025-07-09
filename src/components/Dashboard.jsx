@@ -10,6 +10,7 @@ import {
   Calendar,
   RefreshCw,
 } from "lucide-react";
+import DeviceStatusDistribution from "./DeviceStatusDistribution";
 import {
   BarChart,
   Bar,
@@ -37,6 +38,9 @@ const Dashboard = () => {
     monthlyUsage: 35621,
     uptime: 98.7,
   });
+  
+  const [selectedAlertType, setSelectedAlertType] = useState("tissue");
+  const [isLoading, setIsLoading] = useState(false);
 
   const [recentActivity] = useState([
     {
@@ -86,11 +90,21 @@ const Dashboard = () => {
     { name: "Sun", usage: 42, alerts: 4 },
   ];
 
-  const alertDistribution = [
-    { name: "FULL", value: 75, color: "#10B981" },
-    { name: "LOW", value: 20, color: "#F59E0B" },
-    { name: "EMPTY", value: 5, color: "#EF4444" },
-  ];
+  // Sample realtime status data for the DeviceStatusDistribution component
+  const [realtimeStatus] = useState([
+    { device_id: "1", current_status: "full", battery_percentage: 85, power_status: "on" },
+    { device_id: "2", current_status: "full", battery_percentage: 92, power_status: "on" },
+    { device_id: "3", current_status: "low", battery_percentage: 23, power_status: "on" },
+    { device_id: "4", current_status: "full", battery_percentage: 78, power_status: "on" },
+    { device_id: "5", current_status: "empty", battery_percentage: 15, power_status: "off" },
+    { device_id: "6", current_status: "tamper", battery_percentage: 45, power_status: "on" },
+    { device_id: "7", current_status: "full", battery_percentage: 65, power_status: "on" },
+    { device_id: "8", current_status: "low", battery_percentage: 12, power_status: "on" },
+    { device_id: "9", current_status: "full", battery_percentage: 0, power_status: "off" },
+    { device_id: "10", current_status: "full", battery_percentage: 55, power_status: "on" },
+    { device_id: "11", current_status: "empty", battery_percentage: 8, power_status: "on" },
+    { device_id: "12", current_status: "full", battery_percentage: 72, power_status: "on" },
+  ]);
 
   const deviceStatus = [
     {
@@ -176,6 +190,14 @@ const Dashboard = () => {
     }
   };
 
+  const handleRefresh = () => {
+    setIsLoading(true);
+    // Simulate API call
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -189,8 +211,12 @@ const Dashboard = () => {
           </p>
         </div>
         <div className="mt-4 flex md:mt-0 md:ml-4">
-          <button className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-            <RefreshCw className="w-4 h-4 mr-2" />
+          <button 
+            onClick={handleRefresh}
+            disabled={isLoading}
+            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
           </button>
         </div>
@@ -279,30 +305,37 @@ const Dashboard = () => {
           </ResponsiveContainer>
         </div>
 
-        {/* Alert Distribution */}
-        <div className="card">
+        {/* Device Status Distribution */}
+        <DeviceStatusDistribution 
+          realtimeStatus={realtimeStatus}
+          selectedAlertType={selectedAlertType}
+          onRefresh={handleRefresh}
+          isLoading={isLoading}
+        />
+        
+        {/* Alert Type Toggle */}
+        <div className="card p-4">
           <h3 className="text-lg font-medium text-gray-900 mb-4">
-            Alert Distribution
+            Alert Type
           </h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={alertDistribution}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, value }) => `${name}: ${value}%`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {alertDistribution.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setSelectedAlertType("tissue")}
+              className={`px-4 py-2 rounded-md ${selectedAlertType === "tissue" 
+                ? "bg-blue-500 text-white" 
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
+            >
+              Tissue Alerts
+            </button>
+            <button
+              onClick={() => setSelectedAlertType("battery")}
+              className={`px-4 py-2 rounded-md ${selectedAlertType === "battery" 
+                ? "bg-yellow-500 text-white" 
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
+            >
+              Battery Alerts
+            </button>
+          </div>
         </div>
       </div>
 

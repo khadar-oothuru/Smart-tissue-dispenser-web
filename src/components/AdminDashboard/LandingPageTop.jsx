@@ -208,7 +208,13 @@ const LandingPageTop = ({
 
   // Enhanced device statistics calculation (unified with mobile app logic)
   const enhancedStats = useMemo(() => {
-    const totalDevices = stats?.totalDevices || 0;
+    // Ensure we have valid data
+    if (!Array.isArray(realtimeStatus) || realtimeStatus.length === 0) {
+      console.log("No realtime status data available for calculations");
+    }
+
+    // Use stats from props if available, otherwise calculate from realtimeStatus
+    const totalDevices = stats?.totalDevices || (Array.isArray(realtimeStatus) ? realtimeStatus.length : 0);
     const activeDevices = stats?.activeDevices || 0;
     
     // Calculate offline devices: total - active
@@ -221,6 +227,15 @@ const LandingPageTop = ({
     // Get tissue alert counts using the utility function
     const { emptyCount, lowCount, tamperCount, totalTissueAlerts } = 
       getTissueAlertCounts(realtimeStatus);
+      
+    console.log("Enhanced stats calculation:", {
+      totalDevices,
+      activeDevices,
+      offlineDevices,
+      noPowerCount,
+      powerOffCount,
+      criticalBatteryCount
+    });
 
     // Health percentage
     const healthPercentage =

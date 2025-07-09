@@ -911,12 +911,32 @@ const useDeviceStore = create((set, get) => ({
     });
 
     try {
-      const [analytics, summary, realtime, statusSummary] = await Promise.all([
+      console.log("Fetching all analytics data...");
+      
+      // Use Promise.allSettled to handle partial failures
+      const results = await Promise.allSettled([
         apiFetchDeviceAnalytics(token),
-        apiFetchSummaryAnalytics(token).catch(() => null),
-        apiFetchDeviceRealtimeStatus(token).catch(() => []),
-        apiFetchDeviceStatusSummary(token).catch(() => null),
+        apiFetchSummaryAnalytics(token),
+        apiFetchDeviceRealtimeStatus(token),
+        apiFetchDeviceStatusSummary(token),
       ]);
+      
+      // Process results and handle errors
+      const [analyticsResult, summaryResult, realtimeResult, statusSummaryResult] = results;
+      
+      // Log any errors
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          const endpoints = ['analytics', 'summary', 'realtime', 'status summary'];
+          console.error(`Failed to fetch ${endpoints[index]}:`, result.reason);
+        }
+      });
+      
+      // Extract values or use defaults
+      const analytics = analyticsResult.status === 'fulfilled' ? analyticsResult.value : [];
+      const summary = summaryResult.status === 'fulfilled' ? summaryResult.value : null;
+      const realtime = realtimeResult.status === 'fulfilled' ? realtimeResult.value : [];
+      const statusSummary = statusSummaryResult.status === 'fulfilled' ? statusSummaryResult.value : null;
 
       set({
         analytics: Array.isArray(analytics) ? analytics : [],
@@ -970,19 +990,66 @@ const useDeviceStore = create((set, get) => ({
       }
 
       // Refresh both devices and analytics data in parallel with error handling
-      const refreshPromises = [
-        store.fetchDevices(token).catch((error) => {
-          console.error("❌ Error refreshing devices:", error);
-          return null;
-        }),
-        store.fetchAllAnalyticsData(token).catch((error) => {
-          console.error("❌ Error refreshing analytics:", error);
-          return null;
-        }),
+      console.log("Starting data refresh...");
+      
+      // Define the refresh operations with more detailed logging
+      const refreshOperations = [
+        { 
+          name: 'devices', 
+          operation: () => store.fetchDevices(token),
+          retryCount: 0,
+          maxRetries: 2
+        },
+        { 
+          name: 'analytics', 
+          operation: () => store.fetchAllAnalyticsData(token),
+          retryCount: 0,
+          maxRetries: 2
+        }
       ];
-
-      await Promise.allSettled(refreshPromises);
-      console.log("✅ Data refresh completed successfully");
+      
+      // Execute all operations with Promise.allSettled
+      const results = await Promise.allSettled(
+        refreshOperations.map(async (op) => {
+          try {
+            console.log(`Starting refresh of ${op.name}...`);
+            const startTime = Date.now();
+            const result = await op.operation();
+            const duration = Date.now() - startTime;
+            console.log(`✅ Successfully refreshed ${op.name} in ${duration}ms`);
+            return result;
+          } catch (error) {
+            console.error(`❌ Error refreshing ${op.name}:`, error);
+            
+            // Add more detailed error information
+            const errorDetails = {
+              message: error.message,
+              stack: error.stack,
+              name: op.name,
+              timestamp: new Date().toISOString()
+            };
+            
+            console.error(`Detailed error for ${op.name}:`, JSON.stringify(errorDetails));
+            throw error;
+          }
+        })
+      );
+      
+      // Check if any promises were rejected
+      const hasErrors = results.some(result => result.status === 'rejected');
+      
+      // Log summary of results
+      console.log(`Data refresh complete. Success: ${results.filter(r => r.status === 'fulfilled').length}/${results.length}`);
+      
+      if (hasErrors) {
+        console.warn('Some data refresh operations failed. The dashboard may show partial or stale data.');
+      }
+      
+      if (hasErrors) {
+        console.log("⚠️ Data refresh completed with some errors");
+      } else {
+        console.log("✅ Data refresh completed successfully");
+      }
     } catch (error) {
       console.error("❌ Error refreshing data:", error);
     }

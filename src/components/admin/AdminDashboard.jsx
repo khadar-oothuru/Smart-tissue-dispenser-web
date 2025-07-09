@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import { Link } from "react-router-dom";
 import useDeviceStore from "../../store/useDeviceStore";
+import { toast } from "react-toastify";
 import {
   getDeviceStatusConfig
 } from "../../utils/deviceUtils";
@@ -37,6 +38,7 @@ import {
 import SummaryCards from "../AdminDashboard/SummaryCards";
 import LandingPageTop, { getBatteryAndPowerAlertCounts, getTissueAlertCounts } from "../AdminDashboard/LandingPageTop";
 import DonutChart from "../Charts/DonutChart";
+import DeviceStatusDistribution from "../DeviceStatusDistribution";
 import DeviceDetailsModal from "../Devices/DeviceDetailsModal";
 
 const AdminDashboard = () => {
@@ -300,22 +302,56 @@ const AdminDashboard = () => {
     [dashboardStats, mergedDevices]
   );
 
-  // Fetch data function
+  // Fetch data function with improved error handling
   const fetchData = useCallback(async () => {
     if (!accessToken) return;
 
     try {
       setRefreshing(true);
+      console.log("AdminDashboard: Initial data fetch started...");
+      const startTime = Date.now();
 
-      // Fetch devices and analytics data
-      await Promise.all([
+      // Use Promise.allSettled instead of Promise.all to handle partial failures
+      const results = await Promise.allSettled([
         fetchDevices(accessToken),
         fetchAllAnalyticsData(accessToken),
       ]);
-
-      console.log("AdminDashboard: Data fetched successfully");
+      
+      // Check for any failures
+      const failures = results.filter(result => result.status === 'rejected');
+      
+      if (failures.length > 0) {
+        // Some requests failed
+        console.warn(`AdminDashboard: ${failures.length} of ${results.length} initial data fetches failed`);
+        
+        // Log the specific errors
+        failures.forEach((failure, index) => {
+          const dataType = index === 0 ? 'devices' : 'analytics';
+          console.error(`AdminDashboard: Failed to fetch ${dataType}:`, failure.reason);
+        });
+        
+        // Show a warning toast if there were partial failures
+        if (failures.length < results.length) {
+          toast.warning("Some dashboard data could not be loaded. The dashboard may show incomplete information.");
+        } else {
+          // All requests failed
+          toast.error("Failed to load dashboard data. Please try refreshing the page.");
+        }
+      } else {
+        // All requests succeeded
+        const duration = Date.now() - startTime;
+        console.log(`AdminDashboard: All data fetched successfully in ${duration}ms`);
+      }
     } catch (error) {
       console.error("AdminDashboard: Error fetching data:", error);
+      toast.error("Failed to load dashboard data. Please try refreshing the page.");
+      
+      // Log detailed error information
+      console.error("Initial data fetch error details:", {
+        message: error.message,
+        stack: error.stack,
+        timestamp: new Date().toISOString()
+      });
     } finally {
       setRefreshing(false);
       if (isFirstLoad) {
@@ -331,31 +367,90 @@ const AdminDashboard = () => {
     }
   }, [accessToken, isFirstLoad, fetchData]);
 
-  // Auto-refresh every 30 seconds
+  // Auto-refresh every 30 seconds with improved error handling
   useEffect(() => {
     if (!accessToken || isFirstLoad) return;
 
+    let consecutiveErrors = 0;
+    const MAX_CONSECUTIVE_ERRORS = 3;
+    
     const interval = setInterval(async () => {
       try {
+        console.log("AdminDashboard: Starting auto-refresh...");
+        const startTime = Date.now();
+        
         await fetchAllAnalyticsData(accessToken);
+        
+        const duration = Date.now() - startTime;
+        console.log(`AdminDashboard: Auto-refresh completed in ${duration}ms`);
+        
+        // Reset error counter on success
+        consecutiveErrors = 0;
       } catch (error) {
-        console.error("AdminDashboard: Auto-refresh error:", error);
+        consecutiveErrors++;
+        console.error(`AdminDashboard: Auto-refresh error (${consecutiveErrors}/${MAX_CONSECUTIVE_ERRORS}):`, error);
+        
+        // Log detailed error information
+        console.error("Auto-refresh error details:", {
+          message: error.message,
+          stack: error.stack,
+          timestamp: new Date().toISOString(),
+          consecutiveErrors
+        });
+        
+        // Only show toast for the first error to avoid spamming the user
+        if (consecutiveErrors === 1) {
+          const errorMessage = error.message?.includes('timeout') 
+            ? "Background data refresh timed out. Some dashboard data may be stale." 
+            : "Background data refresh failed. Some dashboard data may be stale.";
+          
+          toast.warning(errorMessage, { autoClose: 5000 });
+        }
+        
+        // If we've had too many consecutive errors, stop auto-refresh
+        if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+          console.error("AdminDashboard: Too many consecutive auto-refresh errors. Stopping auto-refresh.");
+          clearInterval(interval);
+          toast.error("Dashboard auto-refresh has been disabled due to repeated errors. Please refresh manually.", { autoClose: false });
+        }
       }
     }, 30000);
 
     return () => clearInterval(interval);
   }, [accessToken, isFirstLoad, fetchAllAnalyticsData]);
 
-  // Define handleRefresh
+  // Define handleRefresh with improved error handling
   const handleRefresh = useCallback(async () => {
     if (!accessToken) return;
 
     try {
       setRefreshing(true);
+      console.log("AdminDashboard: Starting manual refresh...");
+      const startTime = Date.now();
+      
       await refreshAllData(accessToken);
-      console.log("AdminDashboard: Manual refresh completed");
+      
+      const duration = Date.now() - startTime;
+      console.log(`AdminDashboard: Manual refresh completed in ${duration}ms`);
+      
+      // Show toast notification for successful refresh
+      toast.success("Dashboard data refreshed successfully");
     } catch (error) {
       console.error("AdminDashboard: Refresh error:", error);
+      
+      // Show user-friendly error message
+      const errorMessage = error.message?.includes('timeout') 
+        ? "Dashboard refresh timed out. The server might be busy, please try again later." 
+        : "Failed to refresh dashboard data. Please try again.";
+      
+      toast.error(errorMessage);
+      
+      // Log detailed error information
+      console.error("Refresh error details:", {
+        message: error.message,
+        stack: error.stack,
+        timestamp: new Date().toISOString()
+      });
     } finally {
       setRefreshing(false);
     }
@@ -607,92 +702,7 @@ const AdminDashboard = () => {
     };
   }, [realtimeStatus]);
   
-  // Enhanced Donut Chart Component
-  const DonutChart = ({ data, title }) => {
-    const total = data.reduce((sum, item) => sum + item.value, 0);
-
-    if (total === 0) {
-      return (
-        <div className="flex items-center justify-center h-64 bg-gray-50 dark:bg-gray-700 rounded-lg">
-          <p className="text-gray-500 dark:text-gray-400">No data available</p>
-        </div>
-      );
-    }
-
-    let cumulativePercentage = 0;
-    const radius = 80;
-    const strokeWidth = 20;
-    const center = 100;
-
-    return (
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
-        {title && (
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            {title}
-          </h3>
-        )}
-        <div className="flex items-center justify-center">
-          <div className="relative">
-            <svg width={200} height={200} className="transform -rotate-90">
-              <circle
-                cx={center}
-                cy={center}
-                r={radius}
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={strokeWidth}
-                className="text-gray-200 dark:text-gray-600"
-              />
-              {data.map((item, index) => {
-                const percentage = (item.value / total) * 100;
-                const strokeDasharray = `${percentage * 5.024} 502.4`;
-                const strokeDashoffset = -cumulativePercentage * 5.024;
-                cumulativePercentage += percentage;
-
-                return (
-                  <circle
-                    key={index}
-                    cx={center}
-                    cy={center}
-                    r={radius}
-                    fill="none"
-                    stroke={item.color}
-                    strokeWidth={strokeWidth}
-                    strokeDasharray={strokeDasharray}
-                    strokeDashoffset={strokeDashoffset}
-                    className="transition-all duration-500"
-                  />
-                );
-              })}
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {total}
-                </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">
-                  Total
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="mt-6 grid grid-cols-2 gap-4">
-          {data.map((item, index) => (
-            <div key={index} className="flex items-center space-x-2">
-              <div
-                className="w-3 h-3 rounded-full"
-                style={{ backgroundColor: item.color }}
-              />
-              <span className="text-sm text-gray-700 dark:text-gray-300">
-                {item.name}: {item.value}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
+  // Enhanced Device Card Component
 
   // Enhanced Device Card Component
   const DeviceCard = ({ device }) => {
@@ -1232,14 +1242,11 @@ const AdminDashboard = () => {
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Alert Distribution Chart */}
-        <DonutChart
-          data={alertDistributionData}
-          title={`${
-            selectedAlertType === "tissue" ? "Tissue" : 
-            selectedAlertType === "battery" ? "Battery" : "Power"
-          } Status Distribution`}
-          centerValue={dashboardData.totalDevices}
-          centerLabel="Total Devices"
+        <DeviceStatusDistribution
+          realtimeStatus={realtimeStatus}
+          selectedAlertType={selectedAlertType}
+          onRefresh={handleRefresh}
+          isLoading={refreshing}
         />
 
         {/* Recent Activity Chart or additional stats */}
