@@ -56,18 +56,18 @@ const AdminLayout = ({ children }) => {
       icon: BarChart3,
       description: "Data insights",
     },
-    // {
-    //   name: "Reports",
-    //   href: "/admin/reports",
-    //   icon: FileText,
-    //   description: "Generate reports",
-    // },
-    // {
-    //   name: "Settings",
-    //   href: "/admin/settings",
-    //   icon: Settings,
-    //   description: "System settings",
-    // },
+    {
+      name: "Reports",
+      href: "/admin/analytics",
+      icon: FileText,
+      description: "Generate reports",
+    },
+     {
+      name: "Settings",
+      href: "/admin/users",
+      icon: Settings,
+      description: "System settings",
+    },
   ];
 
   const handleLogout = async () => {

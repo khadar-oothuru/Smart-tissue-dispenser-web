@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   AlertTriangle,
   AlertCircle,
@@ -10,13 +10,60 @@ import {
   Zap,
   Archive,
   TrendingUp,
+  Loader,
+  PowerOff,
+  BatteryMedium,
+  BatteryFull,
+  BatteryWarning,
+  DropletOff,
+  Droplet,
+  AlertTriangle as DropletAlert,
 } from "lucide-react";
+
+// Import utility functions from LandingPageTop
+import { getBatteryAndPowerAlertCounts, getTissueAlertCounts } from "./LandingPageTop";
 
 const SummaryCards = ({
   dashboardData,
+  realtimeStatus = [],
   selectedAlertType = "tissue",
+  isLoading = false,
   onAlertPress,
 }) => {
+  // Calculate alert counts using utility functions
+  const alertCounts = useMemo(() => {
+    // Get tissue alert counts
+    const tissueAlerts = getTissueAlertCounts(realtimeStatus);
+    
+    // Get battery and power alert counts
+    const batteryAlerts = getBatteryAndPowerAlertCounts(realtimeStatus);
+    
+    // Calculate good battery count (devices with battery > 20%)
+    const goodBatteryCount = Array.isArray(realtimeStatus) ? 
+      realtimeStatus.filter(device => {
+        const batteryPercentage = typeof device.battery_percentage === "number" ? device.battery_percentage : null;
+        return batteryPercentage !== null && batteryPercentage > 20;
+      }).length : 0;
+    
+    return {
+      // Tissue alerts
+      emptyCount: tissueAlerts.emptyCount,
+      lowCount: tissueAlerts.lowCount,
+      fullCount: tissueAlerts.fullCount,
+      tamperCount: tissueAlerts.tamperCount,
+      totalTissueAlerts: tissueAlerts.totalTissueAlerts,
+      
+      // Battery alerts
+      lowBatteryCount: batteryAlerts.lowBatteryCount,
+      criticalBatteryCount: batteryAlerts.criticalBatteryCount,
+      batteryOffCount: batteryAlerts.batteryOffCount,
+      noPowerCount: batteryAlerts.noPowerCount,
+      powerOffCount: batteryAlerts.powerOffCount,
+      goodBatteryCount,
+      powerTotalAlertsCount: batteryAlerts.powerTotalAlertsCount,
+    };
+  }, [realtimeStatus]);
+
   // Card definitions based on alert type (2x2 grid layout like mobile)
   let cards = [];
 
@@ -24,30 +71,30 @@ const SummaryCards = ({
     cards = [
       {
         title: "Need to refill",
-        value: dashboardData.emptyDevices || 0,
+        value: alertCounts.emptyCount || dashboardData?.emptyDevices || 0,
         icon: "empty",
         onPress: () => onAlertPress?.("empty"),
         fullWidth: false,
       },
       {
         title: "Low Alerts",
-        value: dashboardData.lowDevices || 0,
+        value: alertCounts.lowCount || dashboardData?.lowDevices || 0,
         icon: "low",
         onPress: () => onAlertPress?.("low"),
         fullWidth: false,
       },
       {
         title: "Tamper Alerts",
-        value: dashboardData.tamperDevices || 0,
+        value: alertCounts.tamperCount || dashboardData?.tamperDevices || 0,
         icon: "tamper",
         onPress: () => onAlertPress?.("tamper"),
         fullWidth: false,
       },
       {
-        title: "Total Alerts",
-        value: dashboardData.totalTissueAlerts || 0,
-        icon: "total",
-        onPress: () => onAlertPress?.("alerts"),
+        title: "Full Alerts",
+        value: alertCounts.fullCount || dashboardData?.fullDevices || 0,
+        icon: "full",
+        onPress: () => onAlertPress?.("full"),
         fullWidth: false,
       },
     ];
@@ -55,30 +102,68 @@ const SummaryCards = ({
     cards = [
       {
         title: "Battery Off",
-        value: dashboardData.powerOffDevices || 0,
+        value: alertCounts.batteryOffCount || dashboardData?.batteryOffDevices || 0,
         icon: "battery-off",
-        onPress: () => onAlertPress?.("battery_off"),
+        onPress: () => onAlertPress?.("battery-off"),
         fullWidth: false,
       },
       {
-        title: "Need charge",
-        value: dashboardData.criticalDevices || 0,
+        title: "Critical Battery",
+        value: alertCounts.criticalBatteryCount || dashboardData?.criticalDevices || 0,
         icon: "critical",
-        onPress: () => onAlertPress?.("critical"),
+        onPress: () => onAlertPress?.("critical-battery"),
         fullWidth: false,
       },
       {
         title: "Low Battery",
-        value: dashboardData.lowBatteryDevices || 0,
+        value: alertCounts.lowBatteryCount || dashboardData?.lowBatteryDevices || 0,
         icon: "battery",
-        onPress: () => onAlertPress?.("battery"),
+        onPress: () => onAlertPress?.("low-battery"),
         fullWidth: false,
       },
       {
-        title: "Total Alerts",
-        value: dashboardData.powerTotalAlertsCount || 0,
-        icon: "total",
-        onPress: () => onAlertPress?.("all_battery"),
+        title: "Good Battery",
+        value: alertCounts.goodBatteryCount || dashboardData?.goodBatteryDevices || 0,
+        icon: "good-battery",
+        onPress: () => onAlertPress?.("good-battery"),
+        fullWidth: false,
+      },
+    ];
+  } else if (selectedAlertType === "power") {
+    cards = [
+      {
+        title: "No Power",
+        value: alertCounts.noPowerCount || dashboardData?.noPowerDevices || 0,
+        icon: "no-power",
+        onPress: () => onAlertPress?.("no-power"),
+        fullWidth: false,
+      },
+      {
+        title: "Power Off",
+        value: alertCounts.powerOffCount || dashboardData?.powerOffDevices || 0,
+        icon: "power-off",
+        onPress: () => onAlertPress?.("power-off"),
+        fullWidth: false,
+      },
+      {
+        title: "Critical Battery",
+        value: alertCounts.criticalBatteryCount || dashboardData?.criticalDevices || 0,
+        icon: "critical",
+        onPress: () => onAlertPress?.("critical-battery"),
+        fullWidth: false,
+      },
+      {
+        title: "Good Power",
+        value: Math.max(
+          0,
+          (dashboardData?.totalDevices || 0) -
+            (alertCounts.noPowerCount || 0) -
+            (alertCounts.powerOffCount || 0) -
+            (alertCounts.criticalBatteryCount || 0) -
+            (alertCounts.lowBatteryCount || 0)
+        ),
+        icon: "good-power",
+        onPress: () => onAlertPress?.("good-power"),
         fullWidth: false,
       },
     ];
@@ -89,19 +174,19 @@ const SummaryCards = ({
       {/* Two rows of two cards each */}
       <div className="grid grid-cols-2 gap-4 mb-4">
         {cards.slice(0, 2).map((card, index) => (
-          <SummaryCard key={index} card={card} />
+          <SummaryCard key={index} card={card} isLoading={isLoading} />
         ))}
       </div>
       <div className="grid grid-cols-2 gap-4">
         {cards.slice(2, 4).map((card, index) => (
-          <SummaryCard key={index + 2} card={card} />
+          <SummaryCard key={index + 2} card={card} isLoading={isLoading} />
         ))}
       </div>
     </div>
   );
 };
 
-const SummaryCard = ({ card }) => {
+const SummaryCard = ({ card, isLoading }) => {
   const Icon = getCardIcon(card.icon);
   const cardColor = getCardColor(card.icon);
   const bgColor = getBgColor(card.icon);
@@ -129,7 +214,11 @@ const SummaryCard = ({ card }) => {
 
         <div className="space-y-2">
           <div className="text-3xl font-bold text-gray-800 dark:text-white">
-            {formatNumber(card.value)}
+            {isLoading ? (
+              <Loader className="animate-spin" />
+            ) : (
+              formatNumber(card.value)
+            )}
           </div>
           <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
             {card.title}
@@ -143,15 +232,18 @@ const SummaryCard = ({ card }) => {
 // Helper functions
 const getCardIcon = (type) => {
   const iconMap = {
-    empty: Archive,
-    low: AlertTriangle,
-    full: CheckCircle,
+    empty: DropletOff,
+    low: DropletAlert,
+    full: Droplet,
     tamper: ShieldAlert,
-    critical: BatteryLow,
-    battery: Battery,
-    power: Power,
+    critical: BatteryWarning,
+    battery: BatteryMedium,
+    "good-battery": BatteryFull,
+    "no-power": Power,
+    "power-off": PowerOff,
+    "good-power": Zap,
     total: AlertCircle,
-    "battery-off": Power,
+    "battery-off": PowerOff,
   };
   return iconMap[type] || AlertCircle;
 };
@@ -160,13 +252,16 @@ const getCardColor = (type) => {
   const colorMap = {
     empty: "text-red-500",
     low: "text-yellow-500",
-    full: "text-green-500",
+    full: "text-blue-500",
     tamper: "text-purple-500",
     critical: "text-red-600",
     battery: "text-yellow-500",
-    power: "text-gray-500",
+    "good-battery": "text-green-500",
+    "no-power": "text-red-600",
+    "power-off": "text-yellow-500",
+    "good-power": "text-green-500",
     total: "text-red-500",
-    "battery-off": "text-purple-500",
+    "battery-off": "text-gray-500",
   };
   return colorMap[type] || "text-gray-500";
 };
@@ -175,13 +270,16 @@ const getBgColor = (type) => {
   const bgMap = {
     empty: "bg-red-50 dark:bg-red-900/20",
     low: "bg-yellow-50 dark:bg-yellow-900/20",
-    full: "bg-green-50 dark:bg-green-900/20",
+    full: "bg-blue-50 dark:bg-blue-900/20",
     tamper: "bg-purple-50 dark:bg-purple-900/20",
     critical: "bg-red-50 dark:bg-red-900/20",
     battery: "bg-yellow-50 dark:bg-yellow-900/20",
-    power: "bg-gray-50 dark:bg-gray-900/20",
+    "good-battery": "bg-green-50 dark:bg-green-900/20",
+    "no-power": "bg-red-50 dark:bg-red-900/20",
+    "power-off": "bg-yellow-50 dark:bg-yellow-900/20",
+    "good-power": "bg-green-50 dark:bg-green-900/20",
     total: "bg-red-50 dark:bg-red-900/20",
-    "battery-off": "bg-purple-50 dark:bg-purple-900/20",
+    "battery-off": "bg-gray-50 dark:bg-gray-800/40",
   };
   return bgMap[type] || "bg-gray-50 dark:bg-gray-900/20";
 };

@@ -3,12 +3,9 @@ import { useAuth } from "../../hooks/useAuth";
 import { Link } from "react-router-dom";
 import useDeviceStore from "../../store/useDeviceStore";
 import {
-  getTissueAlertCounts,
-  getBatteryAndPowerAlertCounts,
-  calculateDeviceHealth,
-  getDeviceStatusConfig,
-  formatTimeAgo,
+  getDeviceStatusConfig
 } from "../../utils/deviceUtils";
+import { formatTimeAgo } from "../../utils/timeUtils";
 import {
   Users,
   Smartphone,
@@ -38,15 +35,82 @@ import {
   EyeOff,
 } from "lucide-react";
 import SummaryCards from "../AdminDashboard/SummaryCards";
-import LandingPageTop from "../AdminDashboard/LandingPageTop";
+import LandingPageTop, { getBatteryAndPowerAlertCounts, getTissueAlertCounts } from "../AdminDashboard/LandingPageTop";
 import DonutChart from "../Charts/DonutChart";
+import DeviceDetailsModal from "../Devices/DeviceDetailsModal";
 
-const AdminDashboard = ({ setDeviceModalData }) => {
+const AdminDashboard = () => {
   const { accessToken } = useAuth();
   const [isFirstLoad, setIsFirstLoad] = useState(true);
-  const [selectedAlertType, setSelectedAlertType] = useState("tissue"); // "battery" or "tissue"
+  const [selectedAlertType, setSelectedAlertType] = useState("tissue"); // "battery", "tissue", or "power"
   const [showAlertDevices, setShowAlertDevices] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  
+  // Device details modal state
+  const [deviceModalOpen, setDeviceModalOpen] = useState(false);
+  const [deviceModalData, setDeviceModalData] = useState({
+    title: "",
+    details: {},
+  });
+
+  // Handler for device card click
+  const handleDeviceCardClick = (deviceType) => {
+    // Prepare modal data based on device type
+    let title = "";
+    let details = {};
+    
+    switch(deviceType) {
+      case 'all':
+        title = "All Devices Summary";
+        details = {
+          "Total Devices": dashboardStats.totalDevices || 0,
+          "Active Devices": dashboardStats.activeDevices || 0,
+          "Offline Devices": dashboardStats.offlineDevices || 0,
+          "No Power Devices": dashboardStats.noPowerDevices || 0,
+          "System Health": `${dashboardStats.systemHealthPercentage || 0}%`,
+          "System Status": dashboardStats.systemHealthStatus || "Unknown"
+        };
+        break;
+      case 'active':
+        title = "Active Devices Summary";
+        details = {
+          "Active Devices": dashboardStats.activeDevices || 0,
+          "Percentage of Total": `${dashboardStats.activeDevices ? ((dashboardStats.activeDevices / dashboardStats.totalDevices) * 100).toFixed(1) : 0}%`,
+          "With Battery Alerts": dashboardStats.activeBatteryAlerts || 0,
+          "With Tissue Alerts": dashboardStats.activeTissueAlerts || 0
+        };
+        break;
+      case 'offline':
+        title = "Offline Devices Summary";
+        details = {
+          "Offline Devices": dashboardStats.offlineDevices || 0,
+          "Percentage of Total": `${dashboardStats.offlineDevices ? ((dashboardStats.offlineDevices / dashboardStats.totalDevices) * 100).toFixed(1) : 0}%`,
+          "Last Seen": "Various times",
+          "Most Common Issue": "Connection lost"
+        };
+        break;
+      case 'no-power':
+        title = "No Power Devices Summary";
+        details = {
+          "No Power Devices": dashboardStats.noPowerDevices || 0,
+          "Percentage of Total": `${dashboardStats.noPowerDevices ? ((dashboardStats.noPowerDevices / dashboardStats.totalDevices) * 100).toFixed(1) : 0}%`,
+          "Battery Off Devices": dashboardStats.batteryOffDevices || 0,
+          "Critical Battery Devices": dashboardStats.criticalDevices || 0
+        };
+        break;
+      default:
+        title = "Device Summary";
+        details = {
+          "Total Devices": dashboardStats.totalDevices || 0
+        };
+    }
+    
+    setDeviceModalData({
+      title,
+      details
+    });
+    setDeviceModalOpen(true);
+  };
 
   // Use the device store
   const deviceStore = useDeviceStore();
@@ -315,7 +379,7 @@ const AdminDashboard = ({ setDeviceModalData }) => {
         { name: "Full", value: fullCount, color: "#10B981" },
         { name: "Tamper", value: tamperCount, color: "#8B5CF6" },
       ];
-    } else {
+    } else if (selectedAlertType === "battery") {
       const { criticalBatteryCount, lowBatteryCount, batteryOffCount } =
         getBatteryAndPowerAlertCounts(realtimeStatus);
 
@@ -336,7 +400,27 @@ const AdminDashboard = ({ setDeviceModalData }) => {
         },
         { name: "Low Battery", value: lowBatteryCount, color: "#FF9F00" },
         { name: "Good Battery", value: goodBatteryCount, color: "#10B981" },
-        { name: "Power Off", value: batteryOffCount, color: "#757575" },
+        { name: "Battery Off", value: batteryOffCount, color: "#757575" },
+      ];
+    } else if (selectedAlertType === "power") {
+      const { noPowerCount, powerOffCount, criticalBatteryCount, lowBatteryCount } =
+        getBatteryAndPowerAlertCounts(realtimeStatus);
+
+      // Calculate good power count
+      const goodPowerCount = Math.max(
+        0,
+        dashboardData.totalDevices -
+          noPowerCount -
+          powerOffCount -
+          criticalBatteryCount -
+          lowBatteryCount
+      );
+
+      return [
+        { name: "No Power", value: noPowerCount, color: "#FF3B30" },
+        { name: "Power Off", value: powerOffCount, color: "#FF9F00" },
+        { name: "Critical Battery", value: criticalBatteryCount, color: "#FF6B00" },
+        { name: "Good Power", value: goodPowerCount, color: "#10B981" },
       ];
     }
   }, [realtimeStatus, selectedAlertType, dashboardData.totalDevices]);
@@ -361,7 +445,7 @@ const AdminDashboard = ({ setDeviceModalData }) => {
   }) => {
     const IconComponent = icon;
     return (
-      <div className="group relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+      <div className="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
         <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         <div className="relative p-6">
           <div className="flex items-center justify-between">
@@ -489,6 +573,40 @@ const AdminDashboard = ({ setDeviceModalData }) => {
     );
   };
 
+  // Calculate alert counts for summary cards and modals
+  const alertCounts = useMemo(() => {
+    // Get tissue alert counts
+    const tissueAlerts = getTissueAlertCounts(realtimeStatus);
+    
+    // Get battery and power alert counts
+    const batteryAlerts = getBatteryAndPowerAlertCounts(realtimeStatus);
+    
+    // Calculate good battery count (devices with battery > 20%)
+    const goodBatteryCount = Array.isArray(realtimeStatus) ? 
+      realtimeStatus.filter(device => {
+        const batteryPercentage = typeof device.battery_percentage === "number" ? device.battery_percentage : null;
+        return batteryPercentage !== null && batteryPercentage > 20;
+      }).length : 0;
+    
+    return {
+      // Tissue alerts
+      emptyCount: tissueAlerts.emptyCount,
+      lowCount: tissueAlerts.lowCount,
+      fullCount: tissueAlerts.fullCount,
+      tamperCount: tissueAlerts.tamperCount,
+      totalTissueAlerts: tissueAlerts.totalTissueAlerts,
+      
+      // Battery alerts
+      lowBatteryCount: batteryAlerts.lowBatteryCount,
+      criticalBatteryCount: batteryAlerts.criticalBatteryCount,
+      batteryOffCount: batteryAlerts.batteryOffCount,
+      noPowerCount: batteryAlerts.noPowerCount,
+      powerOffCount: batteryAlerts.powerOffCount,
+      goodBatteryCount,
+      powerTotalAlertsCount: batteryAlerts.powerTotalAlertsCount,
+    };
+  }, [realtimeStatus]);
+  
   // Enhanced Donut Chart Component
   const DonutChart = ({ data, title }) => {
     const total = data.reduce((sum, item) => sum + item.value, 0);
@@ -853,6 +971,14 @@ const AdminDashboard = ({ setDeviceModalData }) => {
 
   return (
     <div className="space-y-6 p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
+      {/* Device Details Modal */}
+      <DeviceDetailsModal
+        open={deviceModalOpen}
+        onClose={() => setDeviceModalOpen(false)}
+        title={deviceModalData.title}
+        details={deviceModalData.details}
+      />
+      
       {/* Loading State */}
       {loading && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -868,16 +994,21 @@ const AdminDashboard = ({ setDeviceModalData }) => {
       {/* Landing Page Top Component - matches mobile app */}
       <LandingPageTop
         stats={dashboardStats}
+        realtimeStatus={realtimeStatus}
         onRefresh={handleRefresh}
         isLoading={refreshing}
-        onDeviceCardClick={setDeviceModalData}
+        onDeviceCardClick={handleDeviceCardClick}
       />
 
       {/* Enhanced Alert Type Selector - matches mobile app */}
       <div className="flex justify-center mb-6">
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-lg border border-gray-200 dark:border-gray-700 backdrop-blur-sm">
-          <div className="flex items-center justify-center space-x-8">
-            <div className="flex items-center space-x-3">
+          <div className="flex items-center justify-center space-x-4">
+            {/* Tissue Alerts */}
+            <div 
+              className="flex items-center space-x-2 cursor-pointer" 
+              onClick={() => setSelectedAlertType("tissue")}
+            >
               <div
                 className={`p-2 rounded-lg ${
                   selectedAlertType === "tissue"
@@ -885,7 +1016,7 @@ const AdminDashboard = ({ setDeviceModalData }) => {
                     : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
                 }`}
               >
-                <Droplets size={20} />
+                <Droplets size={18} />
               </div>
               <span
                 className={`font-bold text-sm ${
@@ -894,34 +1025,15 @@ const AdminDashboard = ({ setDeviceModalData }) => {
                     : "text-gray-600 dark:text-gray-400"
                 }`}
               >
-                Tissue Alerts
+                Tissue
               </span>
             </div>
 
-            <div className="flex items-center">
-              <button
-                onClick={() =>
-                  setSelectedAlertType(
-                    selectedAlertType === "tissue" ? "battery" : "tissue"
-                  )
-                }
-                className={`relative inline-flex h-8 w-16 items-center rounded-full transition-colors duration-200 ${
-                  selectedAlertType === "battery"
-                    ? "bg-blue-600"
-                    : "bg-gray-300 dark:bg-gray-600"
-                }`}
-              >
-                <span
-                  className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-lg transition-transform duration-200 ${
-                    selectedAlertType === "battery"
-                      ? "translate-x-9"
-                      : "translate-x-1"
-                  }`}
-                />
-              </button>
-            </div>
-
-            <div className="flex items-center space-x-3">
+            {/* Battery Alerts */}
+            <div 
+              className="flex items-center space-x-2 cursor-pointer" 
+              onClick={() => setSelectedAlertType("battery")}
+            >
               <div
                 className={`p-2 rounded-lg ${
                   selectedAlertType === "battery"
@@ -929,7 +1041,7 @@ const AdminDashboard = ({ setDeviceModalData }) => {
                     : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
                 }`}
               >
-                <Battery size={20} />
+                <Battery size={18} />
               </div>
               <span
                 className={`font-bold text-sm ${
@@ -938,7 +1050,32 @@ const AdminDashboard = ({ setDeviceModalData }) => {
                     : "text-gray-600 dark:text-gray-400"
                 }`}
               >
-                Battery Alerts
+                Battery
+              </span>
+            </div>
+
+            {/* Power Alerts */}
+            <div 
+              className="flex items-center space-x-2 cursor-pointer" 
+              onClick={() => setSelectedAlertType("power")}
+            >
+              <div
+                className={`p-2 rounded-lg ${
+                  selectedAlertType === "power"
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
+                }`}
+              >
+                <Power size={18} />
+              </div>
+              <span
+                className={`font-bold text-sm ${
+                  selectedAlertType === "power"
+                    ? "text-blue-600 dark:text-blue-400"
+                    : "text-gray-600 dark:text-gray-400"
+                }`}
+              >
+                Power
               </span>
             </div>
           </div>
@@ -948,10 +1085,148 @@ const AdminDashboard = ({ setDeviceModalData }) => {
       {/* Summary Cards Component - matches mobile app */}
       <SummaryCards
         dashboardData={dashboardData}
+        realtimeStatus={realtimeStatus}
         selectedAlertType={selectedAlertType}
-        onAlertPress={(alertType) =>
-          console.log("Navigate to alert:", alertType)
-        }
+        isLoading={refreshing}
+        onAlertPress={(alertType) => {
+          // Prepare modal data based on alert type
+          let title = "";
+          let details = {};
+          
+          switch(alertType) {
+            case 'empty':
+              title = "Empty Tissue Alerts";
+              details = {
+                "Empty Devices": alertCounts.emptyCount || 0,
+                "Percentage of Total": `${alertCounts.emptyCount ? ((alertCounts.emptyCount / dashboardStats.totalDevices) * 100).toFixed(1) : 0}%`,
+                "Priority": "High",
+                "Action Required": "Refill tissue"
+              };
+              break;
+            case 'low':
+              title = "Low Tissue Alerts";
+              details = {
+                "Low Tissue Devices": alertCounts.lowCount || 0,
+                "Percentage of Total": `${alertCounts.lowCount ? ((alertCounts.lowCount / dashboardStats.totalDevices) * 100).toFixed(1) : 0}%`,
+                "Priority": "Medium",
+                "Action Required": "Monitor and refill soon"
+              };
+              break;
+            case 'tamper':
+              title = "Tamper Alerts";
+              details = {
+                "Tampered Devices": alertCounts.tamperCount || 0,
+                "Percentage of Total": `${alertCounts.tamperCount ? ((alertCounts.tamperCount / dashboardStats.totalDevices) * 100).toFixed(1) : 0}%`,
+                "Priority": "High",
+                "Action Required": "Inspect device"
+              };
+              break;
+            case 'full':
+              title = "Full Tissue Status";
+              details = {
+                "Full Tissue Devices": alertCounts.fullCount || 0,
+                "Percentage of Total": `${alertCounts.fullCount ? ((alertCounts.fullCount / dashboardStats.totalDevices) * 100).toFixed(1) : 0}%`,
+                "Status": "Good",
+                "Action Required": "None"
+              };
+              break;
+            case 'battery-off':
+              title = "Battery Off Alerts";
+              details = {
+                "Battery Off Devices": alertCounts.batteryOffCount || 0,
+                "Percentage of Total": `${alertCounts.batteryOffCount ? ((alertCounts.batteryOffCount / dashboardStats.totalDevices) * 100).toFixed(1) : 0}%`,
+                "Priority": "High",
+                "Action Required": "Replace battery"
+              };
+              break;
+            case 'critical-battery':
+              title = "Critical Battery Alerts";
+              details = {
+                "Critical Battery Devices": alertCounts.criticalBatteryCount || 0,
+                "Percentage of Total": `${alertCounts.criticalBatteryCount ? ((alertCounts.criticalBatteryCount / dashboardStats.totalDevices) * 100).toFixed(1) : 0}%`,
+                "Priority": "High",
+                "Action Required": "Replace battery soon"
+              };
+              break;
+            case 'low-battery':
+              title = "Low Battery Alerts";
+              details = {
+                "Low Battery Devices": alertCounts.lowBatteryCount || 0,
+                "Percentage of Total": `${alertCounts.lowBatteryCount ? ((alertCounts.lowBatteryCount / dashboardStats.totalDevices) * 100).toFixed(1) : 0}%`,
+                "Priority": "Medium",
+                "Action Required": "Monitor battery level"
+              };
+              break;
+            case 'good-battery':
+              title = "Good Battery Status";
+              details = {
+                "Good Battery Devices": alertCounts.goodBatteryCount || 0,
+                "Percentage of Total": `${alertCounts.goodBatteryCount ? ((alertCounts.goodBatteryCount / dashboardStats.totalDevices) * 100).toFixed(1) : 0}%`,
+                "Status": "Good",
+                "Action Required": "None"
+              };
+              break;
+            case 'no-power':
+              title = "No Power Alerts";
+              details = {
+                "No Power Devices": alertCounts.noPowerCount || 0,
+                "Percentage of Total": `${alertCounts.noPowerCount ? ((alertCounts.noPowerCount / dashboardStats.totalDevices) * 100).toFixed(1) : 0}%`,
+                "Priority": "High",
+                "Action Required": "Check power connection"
+              };
+              break;
+            case 'power-off':
+              title = "Power Off Alerts";
+              details = {
+                "Power Off Devices": alertCounts.powerOffCount || 0,
+                "Percentage of Total": `${alertCounts.powerOffCount ? ((alertCounts.powerOffCount / dashboardStats.totalDevices) * 100).toFixed(1) : 0}%`,
+                "Priority": "High",
+                "Action Required": "Check power switch"
+              };
+              break;
+            case 'good-power':
+              title = "Good Power Status";
+              details = {
+                "Devices with Good Power": Math.max(
+                  0,
+                  dashboardStats.totalDevices - 
+                  alertCounts.noPowerCount - 
+                  alertCounts.powerOffCount - 
+                  alertCounts.criticalBatteryCount - 
+                  alertCounts.lowBatteryCount
+                ) || 0,
+                "Percentage of Total": `${Math.max(
+                  0,
+                  dashboardStats.totalDevices - 
+                  alertCounts.noPowerCount - 
+                  alertCounts.powerOffCount - 
+                  alertCounts.criticalBatteryCount - 
+                  alertCounts.lowBatteryCount
+                ) ? ((Math.max(
+                  0,
+                  dashboardStats.totalDevices - 
+                  alertCounts.noPowerCount - 
+                  alertCounts.powerOffCount - 
+                  alertCounts.criticalBatteryCount - 
+                  alertCounts.lowBatteryCount
+                ) / dashboardStats.totalDevices) * 100).toFixed(1) : 0}%`,
+                "Status": "Good",
+                "Action Required": "None"
+              };
+              break;
+            default:
+              title = "Alert Summary";
+              details = {
+                "Total Alerts": dashboardStats.totalAlerts || 0
+              };
+          }
+          
+          setDeviceModalData({
+            title,
+            details
+          });
+          setDeviceModalOpen(true);
+        }}
       />
 
       {/* Charts Section */}
@@ -960,7 +1235,8 @@ const AdminDashboard = ({ setDeviceModalData }) => {
         <DonutChart
           data={alertDistributionData}
           title={`${
-            selectedAlertType === "tissue" ? "Tissue" : "Battery"
+            selectedAlertType === "tissue" ? "Tissue" : 
+            selectedAlertType === "battery" ? "Battery" : "Power"
           } Status Distribution`}
           centerValue={dashboardData.totalDevices}
           centerLabel="Total Devices"
