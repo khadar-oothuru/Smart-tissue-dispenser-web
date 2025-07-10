@@ -34,12 +34,12 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
-import SummaryCards from "../AdminDashboard/SummaryCards";
+
 import LandingPageTop, {
   getBatteryAndPowerAlertCounts,
   getTissueAlertCounts,
 } from "../AdminDashboard/LandingPageTop";
-import DonutChart from "../Charts/DonutChart";
+
 import DeviceStatusDistribution from "../DeviceStatusDistribution";
 import DeviceDetailsModal from "../Devices/DeviceDetailsModal";
 
@@ -618,6 +618,7 @@ const AdminDashboard = () => {
     return () => clearInterval(interval);
   }, [handleRefresh]);
 
+  // Theme-aware StatCard
   const StatCard = ({
     title,
     value,
@@ -629,125 +630,196 @@ const AdminDashboard = () => {
   }) => {
     const IconComponent = icon;
     return (
-      <div className="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        <div className="relative p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div
-                className={`p-3 rounded-xl ${color} bg-gradient-to-br shadow-lg`}
-              >
-                <IconComponent className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  {title}
-                </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {value}
-                </p>
-                {description && (
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    {description}
-                  </p>
-                )}
-              </div>
-            </div>
-            {trend && (
-              <div className="flex items-center space-x-1 text-green-600 dark:text-green-400">
-                <TrendingUp className="h-4 w-4" />
-                <span className="text-sm font-medium">{trend}</span>
-              </div>
-            )}
-          </div>
-          {link && (
-            <Link
-              to={link}
-              className="absolute inset-0 flex items-center justify-end pr-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+      <div
+        className="group relative overflow-hidden rounded-3xl p-4 shadow-lg border transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+        style={{
+          backgroundColor: themeColors.surface,
+          borderColor: themeColors.border,
+          boxShadow: `0 4px 12px ${themeColors.shadow}20`,
+        }}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <div
+              className="p-3 rounded-xl shadow-lg"
+              style={{
+                background: color || themeColors.primary,
+                color: "#fff",
+                boxShadow: `0 2px 8px ${themeColors.shadow}22`,
+              }}
             >
-              <ChevronRight className="h-5 w-5 text-gray-400" />
-            </Link>
+              <IconComponent className="h-6 w-6" />
+            </div>
+            <div>
+              <p
+                className="text-sm font-medium"
+                style={{ color: themeColors.muted }}
+              >
+                {title}
+              </p>
+              <p
+                className="text-2xl font-bold"
+                style={{ color: themeColors.heading }}
+              >
+                {value}
+              </p>
+              {description && (
+                <p
+                  className="text-xs mt-1"
+                  style={{ color: themeColors.text, opacity: 0.7 }}
+                >
+                  {description}
+                </p>
+              )}
+            </div>
+          </div>
+          {trend && (
+            <div
+              className="flex items-center space-x-1"
+              style={{ color: themeColors.success }}
+            >
+              <TrendingUp className="h-4 w-4" />
+              <span className="text-sm font-medium">{trend}</span>
+            </div>
           )}
         </div>
+        {link && (
+          <Link
+            to={link}
+            className="absolute inset-0 flex items-center justify-end pr-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </Link>
+        )}
       </div>
     );
   };
 
+  // Theme-aware QuickActionCard
   const QuickActionCard = ({ title, description, icon, color, link }) => {
     const IconComponent = icon;
     return (
       <Link
         to={link}
-        className="group relative overflow-hidden rounded-xl bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+        className="group relative overflow-hidden rounded-2xl shadow-lg border transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+        style={{
+          backgroundColor: themeColors.surface,
+          borderColor: themeColors.border,
+          boxShadow: `0 4px 12px ${themeColors.shadow}20`,
+        }}
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        <div className="relative p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div
-                className={`p-3 rounded-xl ${color} bg-gradient-to-br shadow-lg`}
-              >
-                <IconComponent className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  {title}
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {description}
-                </p>
-              </div>
+        <div className="flex items-center justify-between p-6">
+          <div className="flex items-center space-x-4">
+            <div
+              className="p-3 rounded-xl shadow-lg"
+              style={{
+                background: color || themeColors.primary,
+                color: "#fff",
+                boxShadow: `0 2px 8px ${themeColors.shadow}22`,
+              }}
+            >
+              <IconComponent className="h-5 w-5" />
             </div>
-            <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-purple-500 transition-colors" />
+            <div>
+              <h3
+                className="text-lg font-semibold"
+                style={{ color: themeColors.heading }}
+              >
+                {title}
+              </h3>
+              <p
+                className="text-sm"
+                style={{ color: themeColors.text, opacity: 0.7 }}
+              >
+                {description}
+              </p>
+            </div>
           </div>
+          <ChevronRight
+            className="h-5 w-5 group-hover:text-purple-500 transition-colors"
+            style={{ color: themeColors.muted }}
+          />
         </div>
       </Link>
     );
   };
 
+  // Theme-aware AlertCard (updated for modern card style)
   const AlertCard = ({ alert }) => {
     const getAlertIcon = (type) => {
       switch (type) {
         case "error":
-          return <XCircle className="h-5 w-5 text-red-500" />;
+          return (
+            <XCircle
+              className="h-5 w-5"
+              style={{ color: themeColors.danger }}
+            />
+          );
         case "warning":
-          return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
+          return (
+            <AlertTriangle
+              className="h-5 w-5"
+              style={{ color: themeColors.warning }}
+            />
+          );
         case "success":
-          return <CheckCircle className="h-5 w-5 text-green-500" />;
+          return (
+            <CheckCircle
+              className="h-5 w-5"
+              style={{ color: themeColors.success }}
+            />
+          );
         default:
-          return <AlertCircle className="h-5 w-5 text-blue-500" />;
+          return (
+            <AlertCircle
+              className="h-5 w-5"
+              style={{ color: themeColors.primary }}
+            />
+          );
       }
     };
 
     const getAlertColor = (type) => {
       switch (type) {
         case "error":
-          return "border-red-200 bg-red-50 dark:bg-red-900/10 dark:border-red-800";
+          return themeColors.danger + "22";
         case "warning":
-          return "border-yellow-200 bg-yellow-50 dark:bg-yellow-900/10 dark:border-yellow-800";
+          return themeColors.warning + "22";
         case "success":
-          return "border-green-200 bg-green-50 dark:bg-green-900/10 dark:border-green-800";
+          return themeColors.success + "22";
         default:
-          return "border-blue-200 bg-blue-50 dark:bg-blue-900/10 dark:border-blue-800";
+          return themeColors.primary + "22";
       }
     };
 
     return (
       <div
-        className={`p-4 rounded-lg border-l-4 transition-all hover:shadow-md ${getAlertColor(
-          alert.type
-        )}`}
+        className="p-4 rounded-2xl border transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-1 mb-3"
+        style={{
+          background: themeColors.surface,
+          borderColor: getAlertColor(alert.type),
+          boxShadow: `0 4px 12px ${themeColors.shadow}10`,
+        }}
       >
         <div className="flex items-start space-x-3">
           <div className="flex-shrink-0 mt-0.5">{getAlertIcon(alert.type)}</div>
           <div className="flex-1">
-            <p className="text-sm font-semibold text-gray-900 dark:text-white">
+            <p
+              className="text-base font-semibold"
+              style={{ color: themeColors.heading }}
+            >
               {alert.device_name}
             </p>
-            <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+            <p
+              className="text-sm mt-1"
+              style={{ color: themeColors.text, opacity: 0.85 }}
+            >
               {alert.message}
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 flex items-center">
+            <p
+              className="text-xs mt-2 flex items-center"
+              style={{ color: themeColors.muted }}
+            >
               <Clock className="h-3 w-3 mr-1" />
               {alert.timestamp}
             </p>
@@ -796,40 +868,49 @@ const AdminDashboard = () => {
   }, [realtimeStatus]);
 
   // Enhanced Device Card Component
-
   // Enhanced Device Card Component
+  // Theme-aware DeviceCard
   const DeviceCard = ({ device }) => {
     const getStatusColor = (status) => {
       switch (status?.toLowerCase()) {
         case "empty":
-          return "text-red-500 bg-red-50 dark:bg-red-900/20";
+          return themeColors.danger;
         case "low":
-          return "text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20";
+          return themeColors.warning;
         case "full":
-          return "text-green-500 bg-green-50 dark:bg-green-900/20";
+          return themeColors.success;
         case "tamper":
-          return "text-purple-500 bg-purple-50 dark:bg-purple-900/20";
+          return themeColors.primary;
         default:
-          return "text-gray-500 bg-gray-50 dark:bg-gray-700";
+          return themeColors.muted;
       }
     };
 
     const getBatteryColor = (percentage) => {
-      if (percentage <= 15) return "text-red-500";
-      if (percentage <= 30) return "text-yellow-500";
-      return "text-green-500";
+      if (percentage <= 15) return themeColors.danger;
+      if (percentage <= 30) return themeColors.warning;
+      return themeColors.success;
     };
 
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow">
+      <div
+        className="rounded-2xl p-4 shadow-lg border transition-all duration-300 hover:shadow-xl"
+        style={{
+          background: themeColors.surface,
+          borderColor: themeColors.border,
+          boxShadow: `0 4px 12px ${themeColors.shadow}20`,
+        }}
+      >
         <div className="flex items-center justify-between mb-3">
-          <h4 className="font-semibold text-gray-900 dark:text-white">
+          <h4 className="font-semibold" style={{ color: themeColors.heading }}>
             {device.device_name}
           </h4>
           <div
-            className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-              device.current_status
-            )}`}
+            className="px-2 py-1 rounded-full text-xs font-medium"
+            style={{
+              background: getStatusColor(device.current_status) + "22",
+              color: getStatusColor(device.current_status),
+            }}
           >
             {device.current_status}
           </div>
@@ -837,29 +918,28 @@ const AdminDashboard = () => {
 
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
-            <span className="text-gray-500 dark:text-gray-400">Room:</span>
-            <span className="ml-2 text-gray-900 dark:text-white">
+            <span style={{ color: themeColors.muted }}>Room:</span>
+            <span className="ml-2" style={{ color: themeColors.text }}>
               {device.room}
             </span>
           </div>
           <div>
-            <span className="text-gray-500 dark:text-gray-400">Floor:</span>
-            <span className="ml-2 text-gray-900 dark:text-white">
+            <span style={{ color: themeColors.muted }}>Floor:</span>
+            <span className="ml-2" style={{ color: themeColors.text }}>
               {device.floor}
             </span>
           </div>
           <div>
-            <span className="text-gray-500 dark:text-gray-400">Level:</span>
-            <span className="ml-2 text-gray-900 dark:text-white">
+            <span style={{ color: themeColors.muted }}>Level:</span>
+            <span className="ml-2" style={{ color: themeColors.text }}>
               {device.current_level}%
             </span>
           </div>
           <div>
-            <span className="text-gray-500 dark:text-gray-400">Battery:</span>
+            <span style={{ color: themeColors.muted }}>Battery:</span>
             <span
-              className={`ml-2 font-medium ${getBatteryColor(
-                device.battery_percentage
-              )}`}
+              className="ml-2 font-medium"
+              style={{ color: getBatteryColor(device.battery_percentage) }}
             >
               {device.battery_percentage}%
             </span>
@@ -869,15 +949,18 @@ const AdminDashboard = () => {
         <div className="mt-3 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <div
-              className={`w-2 h-2 rounded-full ${
-                device.is_active ? "bg-green-500" : "bg-red-500"
-              }`}
+              className="w-2 h-2 rounded-full"
+              style={{
+                background: device.is_active
+                  ? themeColors.success
+                  : themeColors.danger,
+              }}
             />
-            <span className="text-xs text-gray-500 dark:text-gray-400">
+            <span className="text-xs" style={{ color: themeColors.muted }}>
               {device.is_active ? "Online" : "Offline"}
             </span>
           </div>
-          <span className="text-xs text-gray-500 dark:text-gray-400">
+          <span className="text-xs" style={{ color: themeColors.muted }}>
             {device.minutes_since_update}m ago
           </span>
         </div>
@@ -885,56 +968,96 @@ const AdminDashboard = () => {
     );
   };
 
-  // Alert Toggle Component
+  // Theme-aware Alert Toggle Component (updated for modern card style)
   const AlertToggle = () => {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 mb-6">
+      <div
+        className="rounded-3xl p-6 shadow-lg border mb-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+        style={{
+          background: themeColors.surface,
+          borderColor: themeColors.border,
+          boxShadow: `0 4px 12px ${themeColors.shadow}20`,
+        }}
+      >
         <div className="flex items-center justify-center space-x-8">
           <div className="flex items-center space-x-3">
             <Droplets
-              className={`h-5 w-5 ${
-                selectedAlertType === "tissue"
-                  ? "text-blue-500"
-                  : "text-gray-400"
-              }`}
+              className="h-5 w-5"
+              style={{
+                color:
+                  selectedAlertType === "tissue"
+                    ? themeColors.primary
+                    : themeColors.muted,
+              }}
             />
             <span
-              className={`font-medium ${
-                selectedAlertType === "tissue"
-                  ? "text-blue-500"
-                  : "text-gray-600 dark:text-gray-400"
-              }`}
+              className="font-medium"
+              style={{
+                color:
+                  selectedAlertType === "tissue"
+                    ? themeColors.primary
+                    : themeColors.muted,
+              }}
             >
               Tissue Alerts
             </span>
           </div>
 
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              checked={selectedAlertType === "battery"}
-              onChange={(e) =>
-                setSelectedAlertType(e.target.checked ? "battery" : "tissue")
-              }
-              className="sr-only peer"
-            />
-            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-          </label>
+          <button
+            type="button"
+            aria-label="Toggle alert type"
+            className="relative w-16 h-8 rounded-full focus:outline-none focus:ring-2 transition-colors duration-300 mx-2 border"
+            style={{
+              background: themeColors.surface,
+              border: `1px solid ${themeColors.border}`,
+              boxShadow: `0 2px 8px ${themeColors.shadow}22`,
+            }}
+            onClick={() =>
+              setSelectedAlertType(
+                selectedAlertType === "tissue" ? "battery" : "tissue"
+              )
+            }
+          >
+            <span
+              className="absolute top-1 left-1 w-6 h-6 rounded-full flex items-center justify-center transition-all duration-300 shadow-md"
+              style={{
+                transform:
+                  selectedAlertType === "tissue"
+                    ? "translateX(0)"
+                    : "translateX(32px)",
+                background:
+                  selectedAlertType === "tissue"
+                    ? themeColors.primary
+                    : themeColors.warning,
+                color: themeColors.surface,
+              }}
+            >
+              {selectedAlertType === "tissue" ? (
+                <Droplets size={18} className="text-white" />
+              ) : (
+                <Battery size={18} className="text-white" />
+              )}
+            </span>
+          </button>
 
           <div className="flex items-center space-x-3">
             <Battery
-              className={`h-5 w-5 ${
-                selectedAlertType === "battery"
-                  ? "text-yellow-500"
-                  : "text-gray-400"
-              }`}
+              className="h-5 w-5"
+              style={{
+                color:
+                  selectedAlertType === "battery"
+                    ? themeColors.warning
+                    : themeColors.muted,
+              }}
             />
             <span
-              className={`font-medium ${
-                selectedAlertType === "battery"
-                  ? "text-yellow-500"
-                  : "text-gray-600 dark:text-gray-400"
-              }`}
+              className="font-medium"
+              style={{
+                color:
+                  selectedAlertType === "battery"
+                    ? themeColors.warning
+                    : themeColors.muted,
+              }}
             >
               Battery Alerts
             </span>
@@ -944,7 +1067,13 @@ const AdminDashboard = () => {
         <div className="mt-4 flex justify-center">
           <button
             onClick={() => setShowAlertDevices(!showAlertDevices)}
-            className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            className="inline-flex items-center px-4 py-2 rounded-lg transition-colors font-semibold shadow-lg"
+            style={{
+              background: themeColors.primary,
+              color: themeColors.surface,
+              fontWeight: 600,
+              boxShadow: `0 2px 8px ${themeColors.shadow}22`,
+            }}
           >
             {showAlertDevices ? (
               <EyeOff className="h-4 w-4 mr-2" />
@@ -960,7 +1089,7 @@ const AdminDashboard = () => {
     );
   };
 
-  // Summary Cards Component
+  
   const SummaryCards = () => {
     const summaryData = [
       {
@@ -968,26 +1097,26 @@ const AdminDashboard = () => {
         value:
           alertDistributionData.find((d) => d.name === "Empty")?.value || 0,
         icon: AlertOctagon,
-        color: "text-red-500 bg-red-50 dark:bg-red-900/20",
+        color: themeColors.danger,
       },
       {
         title: "Low Level",
         value: alertDistributionData.find((d) => d.name === "Low")?.value || 0,
         icon: AlertTriangle,
-        color: "text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20",
+        color: themeColors.warning,
       },
       {
         title: "Full Devices",
         value: alertDistributionData.find((d) => d.name === "Full")?.value || 0,
         icon: CheckCircle,
-        color: "text-green-500 bg-green-50 dark:bg-green-900/20",
+        color: themeColors.success,
       },
       {
         title: "Tamper Alerts",
         value:
           alertDistributionData.find((d) => d.name === "Tamper")?.value || 0,
         icon: ShieldAlert,
-        color: "text-purple-500 bg-purple-50 dark:bg-purple-900/20",
+        color: themeColors.primary,
       },
     ];
 
@@ -1001,7 +1130,7 @@ const AdminDashboard = () => {
             alertDistributionData.find((d) => d.name === "Critical Battery")
               ?.value || 0,
           icon: Battery,
-          color: "text-red-500 bg-red-50 dark:bg-red-900/20",
+          color: themeColors.danger,
         },
         {
           title: "Low Battery",
@@ -1009,7 +1138,7 @@ const AdminDashboard = () => {
             alertDistributionData.find((d) => d.name === "Low Battery")
               ?.value || 0,
           icon: Battery,
-          color: "text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20",
+          color: themeColors.warning,
         },
         {
           title: "Medium Battery",
@@ -1017,7 +1146,7 @@ const AdminDashboard = () => {
             alertDistributionData.find((d) => d.name === "Medium Battery")
               ?.value || 0,
           icon: Battery,
-          color: "text-yellow-300 bg-yellow-50 dark:bg-yellow-900/20",
+          color: themeColors.warning,
         },
         {
           title: "Good Battery",
@@ -1025,7 +1154,7 @@ const AdminDashboard = () => {
             alertDistributionData.find((d) => d.name === "Good Battery")
               ?.value || 0,
           icon: Battery,
-          color: "text-green-500 bg-green-50 dark:bg-green-900/20",
+          color: themeColors.success,
         }
       );
     }
@@ -1037,18 +1166,32 @@ const AdminDashboard = () => {
           return (
             <div
               key={index}
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4"
+              className="rounded-2xl p-4 shadow-lg border transition-all duration-300"
+              style={{
+                background: themeColors.surface,
+                borderColor: themeColors.border,
+                boxShadow: `0 4px 12px ${themeColors.shadow}20`,
+              }}
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  <p
+                    className="text-sm font-medium"
+                    style={{ color: themeColors.muted }}
+                  >
                     {item.title}
                   </p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  <p
+                    className="text-2xl font-bold"
+                    style={{ color: themeColors.heading }}
+                  >
                     {item.value}
                   </p>
                 </div>
-                <div className={`p-2 rounded-lg ${item.color}`}>
+                <div
+                  className="p-2 rounded-lg"
+                  style={{ background: item.color + "22", color: item.color }}
+                >
                   <IconComponent className="h-5 w-5" />
                 </div>
               </div>
@@ -1067,7 +1210,7 @@ const AdminDashboard = () => {
       style={{
         background: themeColors.background,
         color: themeColors.text,
-        transition: 'background 0.3s, color 0.3s',
+        transition: "background 0.3s, color 0.3s",
       }}
     >
       {/* Device Details Modal */}
@@ -1092,11 +1235,14 @@ const AdminDashboard = () => {
       {/* Enhanced Alert Type Selector - toggle button style for Tissue and Battery Alerts */}
       <div className="flex justify-center mb-6">
         <div
-          className="rounded-2xl p-4 shadow-lg border backdrop-blur-sm"
+          className="rounded-2xl p-4 shadow-lg border backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
           style={{
-            background: themeColors.card,
+            background:
+              selectedAlertType === "tissue"
+                ? themeColors.primary + "11"
+                : themeColors.warning + "11",
             borderColor: themeColors.border,
-            transition: 'background 0.3s, border-color 0.3s',
+            transition: "background 0.3s, border-color 0.3s",
           }}
         >
           <div className="flex items-center justify-center">
@@ -1104,7 +1250,7 @@ const AdminDashboard = () => {
               className="font-bold text-sm mr-3"
               style={{
                 color:
-                  selectedAlertType === 'tissue'
+                  selectedAlertType === "tissue"
                     ? themeColors.primary
                     : themeColors.muted,
               }}
@@ -1114,14 +1260,19 @@ const AdminDashboard = () => {
             <button
               type="button"
               aria-label="Toggle alert type"
-              className="relative w-16 h-8 rounded-full focus:outline-none focus:ring-2 transition-colors duration-300 mx-2"
+              className="relative w-16 h-8 rounded-full focus:outline-none focus:ring-2 transition-colors duration-300 mx-2 border"
               style={{
-                background: themeColors.surface,
+                background:
+                  selectedAlertType === "tissue"
+                    ? themeColors.primary + "22"
+                    : themeColors.warning + "22",
                 border: `1px solid ${themeColors.border}`,
+                boxShadow: `0 2px 8px ${themeColors.shadow}22`,
+                transition: "background 0.3s, border 0.3s",
               }}
               onClick={() =>
                 setSelectedAlertType(
-                  selectedAlertType === 'tissue' ? 'battery' : 'tissue'
+                  selectedAlertType === "tissue" ? "battery" : "tissue"
                 )
               }
             >
@@ -1129,16 +1280,17 @@ const AdminDashboard = () => {
                 className="absolute top-1 left-1 w-6 h-6 rounded-full flex items-center justify-center transition-all duration-300 shadow-md"
                 style={{
                   transform:
-                    selectedAlertType === 'tissue'
-                      ? 'translateX(0)' : 'translateX(32px)',
+                    selectedAlertType === "tissue"
+                      ? "translateX(0)"
+                      : "translateX(32px)",
                   background:
-                    selectedAlertType === 'tissue'
+                    selectedAlertType === "tissue"
                       ? themeColors.primary
                       : themeColors.warning,
                   color: themeColors.surface,
                 }}
               >
-                {selectedAlertType === 'tissue' ? (
+                {selectedAlertType === "tissue" ? (
                   <Droplets size={18} className="text-white" />
                 ) : (
                   <Battery size={18} className="text-white" />
@@ -1149,7 +1301,7 @@ const AdminDashboard = () => {
               className="font-bold text-sm ml-3"
               style={{
                 color:
-                  selectedAlertType === 'battery'
+                  selectedAlertType === "battery"
                     ? themeColors.warning
                     : themeColors.muted,
               }}
@@ -1187,11 +1339,12 @@ const AdminDashboard = () => {
 
         {/* Recent Alerts Section (now in right column) */}
         <div
-          className="rounded-2xl p-6 shadow-lg border flex flex-col"
+          className="rounded-3xl p-6 shadow-lg border flex flex-col transition-all duration-300"
           style={{
             background: themeColors.card,
             borderColor: themeColors.border,
-            transition: 'background 0.3s, border-color 0.3s',
+            boxShadow: `0 4px 12px ${themeColors.shadow}20`,
+            transition: "background 0.3s, border-color 0.3s",
           }}
         >
           <div className="flex justify-between items-center mb-6">
@@ -1216,11 +1369,12 @@ const AdminDashboard = () => {
               .map((alert) => (
                 <div
                   key={alert.id}
-                  className="flex items-center justify-between p-3 rounded-lg transition-colors"
+                  className="flex items-center justify-between p-4 rounded-2xl transition-all duration-300 hover:shadow-md"
                   style={{
                     background: themeColors.surface,
-                    borderRadius: 8,
-                    cursor: 'pointer',
+                    borderRadius: 18,
+                    cursor: "pointer",
+                    boxShadow: `0 2px 8px ${themeColors.shadow}10`,
                   }}
                 >
                   <div className="flex items-center space-x-3">
@@ -1228,9 +1382,9 @@ const AdminDashboard = () => {
                       className="w-3 h-3 rounded-full"
                       style={{
                         background:
-                          alert.type === 'error'
+                          alert.type === "error"
                             ? themeColors.danger
-                            : alert.type === 'warning'
+                            : alert.type === "warning"
                             ? themeColors.warning
                             : themeColors.primary,
                       }}
@@ -1250,10 +1404,7 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                   </div>
-                  <div
-                    className="text-sm"
-                    style={{ color: themeColors.muted }}
-                  >
+                  <div className="text-sm" style={{ color: themeColors.muted }}>
                     {alert.timestamp}
                   </div>
                 </div>
