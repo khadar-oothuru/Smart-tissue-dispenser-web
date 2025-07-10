@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import useTheme from "../../hooks/useThemeContext";
 import { useAuth } from "../../hooks/useAuth";
 import { Link } from "react-router-dom";
 import useDeviceStore from "../../store/useDeviceStore";
 import { toast } from "react-toastify";
-import {
-  getDeviceStatusConfig
-} from "../../utils/deviceUtils";
+import { getDeviceStatusConfig } from "../../utils/deviceUtils";
 import { formatTimeAgo } from "../../utils/timeUtils";
 import {
   Users,
@@ -36,18 +35,23 @@ import {
   EyeOff,
 } from "lucide-react";
 import SummaryCards from "../AdminDashboard/SummaryCards";
-import LandingPageTop, { getBatteryAndPowerAlertCounts, getTissueAlertCounts } from "../AdminDashboard/LandingPageTop";
+import LandingPageTop, {
+  getBatteryAndPowerAlertCounts,
+  getTissueAlertCounts,
+} from "../AdminDashboard/LandingPageTop";
 import DonutChart from "../Charts/DonutChart";
 import DeviceStatusDistribution from "../DeviceStatusDistribution";
 import DeviceDetailsModal from "../Devices/DeviceDetailsModal";
 
 const AdminDashboard = () => {
+  // Use theme context
+  const { themeColors } = useTheme();
   const { accessToken } = useAuth();
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const [selectedAlertType, setSelectedAlertType] = useState("tissue"); // "battery", "tissue", or "power"
   const [showAlertDevices, setShowAlertDevices] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  
+
   // Device details modal state
   const [deviceModalOpen, setDeviceModalOpen] = useState(false);
   const [deviceModalData, setDeviceModalData] = useState({
@@ -60,9 +64,9 @@ const AdminDashboard = () => {
     // Prepare modal data based on device type
     let title = "";
     let details = {};
-    
-    switch(deviceType) {
-      case 'all':
+
+    switch (deviceType) {
+      case "all":
         title = "All Devices Summary";
         details = {
           "Total Devices": dashboardStats.totalDevices || 0,
@@ -70,46 +74,69 @@ const AdminDashboard = () => {
           "Offline Devices": dashboardStats.offlineDevices || 0,
           "No Power Devices": dashboardStats.noPowerDevices || 0,
           "System Health": `${dashboardStats.systemHealthPercentage || 0}%`,
-          "System Status": dashboardStats.systemHealthStatus || "Unknown"
+          "System Status": dashboardStats.systemHealthStatus || "Unknown",
         };
         break;
-      case 'active':
+      case "active":
         title = "Active Devices Summary";
         details = {
           "Active Devices": dashboardStats.activeDevices || 0,
-          "Percentage of Total": `${dashboardStats.activeDevices ? ((dashboardStats.activeDevices / dashboardStats.totalDevices) * 100).toFixed(1) : 0}%`,
+          "Percentage of Total": `${
+            dashboardStats.activeDevices
+              ? (
+                  (dashboardStats.activeDevices / dashboardStats.totalDevices) *
+                  100
+                ).toFixed(1)
+              : 0
+          }%`,
           "With Battery Alerts": dashboardStats.activeBatteryAlerts || 0,
-          "With Tissue Alerts": dashboardStats.activeTissueAlerts || 0
+          "With Tissue Alerts": dashboardStats.activeTissueAlerts || 0,
         };
         break;
-      case 'offline':
+      case "offline":
         title = "Offline Devices Summary";
         details = {
           "Offline Devices": dashboardStats.offlineDevices || 0,
-          "Percentage of Total": `${dashboardStats.offlineDevices ? ((dashboardStats.offlineDevices / dashboardStats.totalDevices) * 100).toFixed(1) : 0}%`,
+          "Percentage of Total": `${
+            dashboardStats.offlineDevices
+              ? (
+                  (dashboardStats.offlineDevices /
+                    dashboardStats.totalDevices) *
+                  100
+                ).toFixed(1)
+              : 0
+          }%`,
           "Last Seen": "Various times",
-          "Most Common Issue": "Connection lost"
+          "Most Common Issue": "Connection lost",
         };
         break;
-      case 'no-power':
+      case "no-power":
         title = "No Power Devices Summary";
         details = {
           "No Power Devices": dashboardStats.noPowerDevices || 0,
-          "Percentage of Total": `${dashboardStats.noPowerDevices ? ((dashboardStats.noPowerDevices / dashboardStats.totalDevices) * 100).toFixed(1) : 0}%`,
+          "Percentage of Total": `${
+            dashboardStats.noPowerDevices
+              ? (
+                  (dashboardStats.noPowerDevices /
+                    dashboardStats.totalDevices) *
+                  100
+                ).toFixed(1)
+              : 0
+          }%`,
           "Battery Off Devices": dashboardStats.batteryOffDevices || 0,
-          "Critical Battery Devices": dashboardStats.criticalDevices || 0
+          "Critical Battery Devices": dashboardStats.criticalDevices || 0,
         };
         break;
       default:
         title = "Device Summary";
         details = {
-          "Total Devices": dashboardStats.totalDevices || 0
+          "Total Devices": dashboardStats.totalDevices || 0,
         };
     }
-    
+
     setDeviceModalData({
       title,
-      details
+      details,
     });
     setDeviceModalOpen(true);
   };
@@ -128,7 +155,40 @@ const AdminDashboard = () => {
     loadCachedData,
   } = deviceStore;
 
-  // Load cached data on mount for instant UI
+  // --- Local Storage & Caching Logic ---
+  // Helper to cache and restore dashboard data
+  function useDashboardCache(key, data, setData) {
+    useEffect(() => {
+      const cached = localStorage.getItem(key);
+      if (cached) {
+        try {
+          setData(JSON.parse(cached));
+        } catch (e) {
+          // ignore
+        }
+      }
+    }, []);
+    useEffect(() => {
+      if (data) {
+        localStorage.setItem(key, JSON.stringify(data));
+      }
+    }, [data, key]);
+  }
+
+  // Use local state to allow cache restoration
+  const [dashboardDataCache, setDashboardDataCache] = useState(null);
+  const [realtimeStatusCache, setRealtimeStatusCache] = useState(null);
+
+  // Fallbacks for cache, but do NOT reference dashboardData before it's defined
+  let dashboardDataToShow = dashboardDataCache;
+  let realtimeStatusToShow = realtimeStatusCache;
+
+  // Load cached data on mount for instant UI (keep for legacy support)
+  useEffect(() => {
+    loadCachedData();
+  }, [loadCachedData]);
+
+  // Load cached data on mount for instant UI (keep for legacy support)
   useEffect(() => {
     loadCachedData();
   }, [loadCachedData]);
@@ -316,41 +376,54 @@ const AdminDashboard = () => {
         fetchDevices(accessToken),
         fetchAllAnalyticsData(accessToken),
       ]);
-      
+
       // Check for any failures
-      const failures = results.filter(result => result.status === 'rejected');
-      
+      const failures = results.filter((result) => result.status === "rejected");
+
       if (failures.length > 0) {
         // Some requests failed
-        console.warn(`AdminDashboard: ${failures.length} of ${results.length} initial data fetches failed`);
-        
+        console.warn(
+          `AdminDashboard: ${failures.length} of ${results.length} initial data fetches failed`
+        );
+
         // Log the specific errors
         failures.forEach((failure, index) => {
-          const dataType = index === 0 ? 'devices' : 'analytics';
-          console.error(`AdminDashboard: Failed to fetch ${dataType}:`, failure.reason);
+          const dataType = index === 0 ? "devices" : "analytics";
+          console.error(
+            `AdminDashboard: Failed to fetch ${dataType}:`,
+            failure.reason
+          );
         });
-        
+
         // Show a warning toast if there were partial failures
         if (failures.length < results.length) {
-          toast.warning("Some dashboard data could not be loaded. The dashboard may show incomplete information.");
+          toast.warning(
+            "Some dashboard data could not be loaded. The dashboard may show incomplete information."
+          );
         } else {
           // All requests failed
-          toast.error("Failed to load dashboard data. Please try refreshing the page.");
+          toast.error(
+            "Failed to load dashboard data. Please try refreshing the page."
+          );
         }
       } else {
         // All requests succeeded
         const duration = Date.now() - startTime;
-        console.log(`AdminDashboard: All data fetched successfully in ${duration}ms`);
+        console.log(
+          `AdminDashboard: All data fetched successfully in ${duration}ms`
+        );
       }
     } catch (error) {
       console.error("AdminDashboard: Error fetching data:", error);
-      toast.error("Failed to load dashboard data. Please try refreshing the page.");
-      
+      toast.error(
+        "Failed to load dashboard data. Please try refreshing the page."
+      );
+
       // Log detailed error information
       console.error("Initial data fetch error details:", {
         message: error.message,
         stack: error.stack,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     } finally {
       setRefreshing(false);
@@ -373,45 +446,53 @@ const AdminDashboard = () => {
 
     let consecutiveErrors = 0;
     const MAX_CONSECUTIVE_ERRORS = 3;
-    
+
     const interval = setInterval(async () => {
       try {
         console.log("AdminDashboard: Starting auto-refresh...");
         const startTime = Date.now();
-        
+
         await fetchAllAnalyticsData(accessToken);
-        
+
         const duration = Date.now() - startTime;
         console.log(`AdminDashboard: Auto-refresh completed in ${duration}ms`);
-        
+
         // Reset error counter on success
         consecutiveErrors = 0;
       } catch (error) {
         consecutiveErrors++;
-        console.error(`AdminDashboard: Auto-refresh error (${consecutiveErrors}/${MAX_CONSECUTIVE_ERRORS}):`, error);
-        
+        console.error(
+          `AdminDashboard: Auto-refresh error (${consecutiveErrors}/${MAX_CONSECUTIVE_ERRORS}):`,
+          error
+        );
+
         // Log detailed error information
         console.error("Auto-refresh error details:", {
           message: error.message,
           stack: error.stack,
           timestamp: new Date().toISOString(),
-          consecutiveErrors
+          consecutiveErrors,
         });
-        
+
         // Only show toast for the first error to avoid spamming the user
         if (consecutiveErrors === 1) {
-          const errorMessage = error.message?.includes('timeout') 
-            ? "Background data refresh timed out. Some dashboard data may be stale." 
+          const errorMessage = error.message?.includes("timeout")
+            ? "Background data refresh timed out. Some dashboard data may be stale."
             : "Background data refresh failed. Some dashboard data may be stale.";
-          
+
           toast.warning(errorMessage, { autoClose: 5000 });
         }
-        
+
         // If we've had too many consecutive errors, stop auto-refresh
         if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
-          console.error("AdminDashboard: Too many consecutive auto-refresh errors. Stopping auto-refresh.");
+          console.error(
+            "AdminDashboard: Too many consecutive auto-refresh errors. Stopping auto-refresh."
+          );
           clearInterval(interval);
-          toast.error("Dashboard auto-refresh has been disabled due to repeated errors. Please refresh manually.", { autoClose: false });
+          toast.error(
+            "Dashboard auto-refresh has been disabled due to repeated errors. Please refresh manually.",
+            { autoClose: false }
+          );
         }
       }
     }, 30000);
@@ -427,29 +508,29 @@ const AdminDashboard = () => {
       setRefreshing(true);
       console.log("AdminDashboard: Starting manual refresh...");
       const startTime = Date.now();
-      
+
       await refreshAllData(accessToken);
-      
+
       const duration = Date.now() - startTime;
       console.log(`AdminDashboard: Manual refresh completed in ${duration}ms`);
-      
+
       // Show toast notification for successful refresh
       toast.success("Dashboard data refreshed successfully");
     } catch (error) {
       console.error("AdminDashboard: Refresh error:", error);
-      
+
       // Show user-friendly error message
-      const errorMessage = error.message?.includes('timeout') 
-        ? "Dashboard refresh timed out. The server might be busy, please try again later." 
+      const errorMessage = error.message?.includes("timeout")
+        ? "Dashboard refresh timed out. The server might be busy, please try again later."
         : "Failed to refresh dashboard data. Please try again.";
-      
+
       toast.error(errorMessage);
-      
+
       // Log detailed error information
       console.error("Refresh error details:", {
         message: error.message,
         stack: error.stack,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     } finally {
       setRefreshing(false);
@@ -498,8 +579,12 @@ const AdminDashboard = () => {
         { name: "Battery Off", value: batteryOffCount, color: "#757575" },
       ];
     } else if (selectedAlertType === "power") {
-      const { noPowerCount, powerOffCount, criticalBatteryCount, lowBatteryCount } =
-        getBatteryAndPowerAlertCounts(realtimeStatus);
+      const {
+        noPowerCount,
+        powerOffCount,
+        criticalBatteryCount,
+        lowBatteryCount,
+      } = getBatteryAndPowerAlertCounts(realtimeStatus);
 
       // Calculate good power count
       const goodPowerCount = Math.max(
@@ -514,7 +599,11 @@ const AdminDashboard = () => {
       return [
         { name: "No Power", value: noPowerCount, color: "#FF3B30" },
         { name: "Power Off", value: powerOffCount, color: "#FF9F00" },
-        { name: "Critical Battery", value: criticalBatteryCount, color: "#FF6B00" },
+        {
+          name: "Critical Battery",
+          value: criticalBatteryCount,
+          color: "#FF6B00",
+        },
         { name: "Good Power", value: goodPowerCount, color: "#10B981" },
       ];
     }
@@ -672,17 +761,21 @@ const AdminDashboard = () => {
   const alertCounts = useMemo(() => {
     // Get tissue alert counts
     const tissueAlerts = getTissueAlertCounts(realtimeStatus);
-    
+
     // Get battery and power alert counts
     const batteryAlerts = getBatteryAndPowerAlertCounts(realtimeStatus);
-    
+
     // Calculate good battery count (devices with battery > 20%)
-    const goodBatteryCount = Array.isArray(realtimeStatus) ? 
-      realtimeStatus.filter(device => {
-        const batteryPercentage = typeof device.battery_percentage === "number" ? device.battery_percentage : null;
-        return batteryPercentage !== null && batteryPercentage > 20;
-      }).length : 0;
-    
+    const goodBatteryCount = Array.isArray(realtimeStatus)
+      ? realtimeStatus.filter((device) => {
+          const batteryPercentage =
+            typeof device.battery_percentage === "number"
+              ? device.battery_percentage
+              : null;
+          return batteryPercentage !== null && batteryPercentage > 20;
+        }).length
+      : 0;
+
     return {
       // Tissue alerts
       emptyCount: tissueAlerts.emptyCount,
@@ -690,7 +783,7 @@ const AdminDashboard = () => {
       fullCount: tissueAlerts.fullCount,
       tamperCount: tissueAlerts.tamperCount,
       totalTissueAlerts: tissueAlerts.totalTissueAlerts,
-      
+
       // Battery alerts
       lowBatteryCount: batteryAlerts.lowBatteryCount,
       criticalBatteryCount: batteryAlerts.criticalBatteryCount,
@@ -701,7 +794,7 @@ const AdminDashboard = () => {
       powerTotalAlertsCount: batteryAlerts.powerTotalAlertsCount,
     };
   }, [realtimeStatus]);
-  
+
   // Enhanced Device Card Component
 
   // Enhanced Device Card Component
@@ -966,21 +1059,17 @@ const AdminDashboard = () => {
     );
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="flex items-center space-x-3">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-          <span className="text-gray-600 dark:text-gray-300 font-medium">
-            Loading dashboard...
-          </span>
-        </div>
-      </div>
-    );
-  }
+  // Remove the blocking loading spinner entirely
 
   return (
-    <div className="space-y-6 p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
+    <div
+      className="space-y-6 p-6 min-h-screen"
+      style={{
+        background: themeColors.background,
+        color: themeColors.text,
+        transition: 'background 0.3s, color 0.3s',
+      }}
+    >
       {/* Device Details Modal */}
       <DeviceDetailsModal
         open={deviceModalOpen}
@@ -988,405 +1077,231 @@ const AdminDashboard = () => {
         title={deviceModalData.title}
         details={deviceModalData.details}
       />
-      
-      {/* Loading State */}
-      {loading && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 flex items-center space-x-3">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-            <span className="text-gray-700 dark:text-gray-300">
-              Loading dashboard data...
-            </span>
-          </div>
-        </div>
-      )}
+
+      {/* No blocking loading spinner - background refresh only */}
 
       {/* Landing Page Top Component - matches mobile app */}
       <LandingPageTop
         stats={dashboardStats}
-        realtimeStatus={realtimeStatus}
+        realtimeStatus={realtimeStatusCache || realtimeStatus}
         onRefresh={handleRefresh}
-        isLoading={refreshing}
+        isLoading={false} // Never show loading spinner
         onDeviceCardClick={handleDeviceCardClick}
       />
 
-      {/* Enhanced Alert Type Selector - matches mobile app */}
+      {/* Enhanced Alert Type Selector - toggle button style for Tissue and Battery Alerts */}
       <div className="flex justify-center mb-6">
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-lg border border-gray-200 dark:border-gray-700 backdrop-blur-sm">
-          <div className="flex items-center justify-center space-x-4">
-            {/* Tissue Alerts */}
-            <div 
-              className="flex items-center space-x-2 cursor-pointer" 
-              onClick={() => setSelectedAlertType("tissue")}
+        <div
+          className="rounded-2xl p-4 shadow-lg border backdrop-blur-sm"
+          style={{
+            background: themeColors.card,
+            borderColor: themeColors.border,
+            transition: 'background 0.3s, border-color 0.3s',
+          }}
+        >
+          <div className="flex items-center justify-center">
+            <span
+              className="font-bold text-sm mr-3"
+              style={{
+                color:
+                  selectedAlertType === 'tissue'
+                    ? themeColors.primary
+                    : themeColors.muted,
+              }}
             >
-              <div
-                className={`p-2 rounded-lg ${
-                  selectedAlertType === "tissue"
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
-                }`}
-              >
-                <Droplets size={18} />
-              </div>
-              <span
-                className={`font-bold text-sm ${
-                  selectedAlertType === "tissue"
-                    ? "text-blue-600 dark:text-blue-400"
-                    : "text-gray-600 dark:text-gray-400"
-                }`}
-              >
-                Tissue
-              </span>
-            </div>
-
-            {/* Battery Alerts */}
-            <div 
-              className="flex items-center space-x-2 cursor-pointer" 
-              onClick={() => setSelectedAlertType("battery")}
+              Tissue
+            </span>
+            <button
+              type="button"
+              aria-label="Toggle alert type"
+              className="relative w-16 h-8 rounded-full focus:outline-none focus:ring-2 transition-colors duration-300 mx-2"
+              style={{
+                background: themeColors.surface,
+                border: `1px solid ${themeColors.border}`,
+              }}
+              onClick={() =>
+                setSelectedAlertType(
+                  selectedAlertType === 'tissue' ? 'battery' : 'tissue'
+                )
+              }
             >
-              <div
-                className={`p-2 rounded-lg ${
-                  selectedAlertType === "battery"
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
-                }`}
-              >
-                <Battery size={18} />
-              </div>
               <span
-                className={`font-bold text-sm ${
-                  selectedAlertType === "battery"
-                    ? "text-blue-600 dark:text-blue-400"
-                    : "text-gray-600 dark:text-gray-400"
-                }`}
+                className="absolute top-1 left-1 w-6 h-6 rounded-full flex items-center justify-center transition-all duration-300 shadow-md"
+                style={{
+                  transform:
+                    selectedAlertType === 'tissue'
+                      ? 'translateX(0)' : 'translateX(32px)',
+                  background:
+                    selectedAlertType === 'tissue'
+                      ? themeColors.primary
+                      : themeColors.warning,
+                  color: themeColors.surface,
+                }}
               >
-                Battery
+                {selectedAlertType === 'tissue' ? (
+                  <Droplets size={18} className="text-white" />
+                ) : (
+                  <Battery size={18} className="text-white" />
+                )}
               </span>
-            </div>
-
-            {/* Power Alerts */}
-            <div 
-              className="flex items-center space-x-2 cursor-pointer" 
-              onClick={() => setSelectedAlertType("power")}
+            </button>
+            <span
+              className="font-bold text-sm ml-3"
+              style={{
+                color:
+                  selectedAlertType === 'battery'
+                    ? themeColors.warning
+                    : themeColors.muted,
+              }}
             >
-              <div
-                className={`p-2 rounded-lg ${
-                  selectedAlertType === "power"
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
-                }`}
-              >
-                <Power size={18} />
-              </div>
-              <span
-                className={`font-bold text-sm ${
-                  selectedAlertType === "power"
-                    ? "text-blue-600 dark:text-blue-400"
-                    : "text-gray-600 dark:text-gray-400"
-                }`}
-              >
-                Power
-              </span>
-            </div>
+              Battery
+            </span>
           </div>
         </div>
       </div>
 
       {/* Summary Cards Component - matches mobile app */}
       <SummaryCards
-        dashboardData={dashboardData}
-        realtimeStatus={realtimeStatus}
+        dashboardData={dashboardDataCache || dashboardData}
+        realtimeStatus={realtimeStatusCache || realtimeStatus}
         selectedAlertType={selectedAlertType}
-        isLoading={refreshing}
+        isLoading={false}
         onAlertPress={(alertType) => {
-          // Prepare modal data based on alert type
           let title = "";
           let details = {};
-          
-          switch(alertType) {
-            case 'empty':
-              title = "Empty Tissue Alerts";
-              details = {
-                "Empty Devices": alertCounts.emptyCount || 0,
-                "Percentage of Total": `${alertCounts.emptyCount ? ((alertCounts.emptyCount / dashboardStats.totalDevices) * 100).toFixed(1) : 0}%`,
-                "Priority": "High",
-                "Action Required": "Refill tissue"
-              };
-              break;
-            case 'low':
-              title = "Low Tissue Alerts";
-              details = {
-                "Low Tissue Devices": alertCounts.lowCount || 0,
-                "Percentage of Total": `${alertCounts.lowCount ? ((alertCounts.lowCount / dashboardStats.totalDevices) * 100).toFixed(1) : 0}%`,
-                "Priority": "Medium",
-                "Action Required": "Monitor and refill soon"
-              };
-              break;
-            case 'tamper':
-              title = "Tamper Alerts";
-              details = {
-                "Tampered Devices": alertCounts.tamperCount || 0,
-                "Percentage of Total": `${alertCounts.tamperCount ? ((alertCounts.tamperCount / dashboardStats.totalDevices) * 100).toFixed(1) : 0}%`,
-                "Priority": "High",
-                "Action Required": "Inspect device"
-              };
-              break;
-            case 'full':
-              title = "Full Tissue Status";
-              details = {
-                "Full Tissue Devices": alertCounts.fullCount || 0,
-                "Percentage of Total": `${alertCounts.fullCount ? ((alertCounts.fullCount / dashboardStats.totalDevices) * 100).toFixed(1) : 0}%`,
-                "Status": "Good",
-                "Action Required": "None"
-              };
-              break;
-            case 'battery-off':
-              title = "Battery Off Alerts";
-              details = {
-                "Battery Off Devices": alertCounts.batteryOffCount || 0,
-                "Percentage of Total": `${alertCounts.batteryOffCount ? ((alertCounts.batteryOffCount / dashboardStats.totalDevices) * 100).toFixed(1) : 0}%`,
-                "Priority": "High",
-                "Action Required": "Replace battery"
-              };
-              break;
-            case 'critical-battery':
-              title = "Critical Battery Alerts";
-              details = {
-                "Critical Battery Devices": alertCounts.criticalBatteryCount || 0,
-                "Percentage of Total": `${alertCounts.criticalBatteryCount ? ((alertCounts.criticalBatteryCount / dashboardStats.totalDevices) * 100).toFixed(1) : 0}%`,
-                "Priority": "High",
-                "Action Required": "Replace battery soon"
-              };
-              break;
-            case 'low-battery':
-              title = "Low Battery Alerts";
-              details = {
-                "Low Battery Devices": alertCounts.lowBatteryCount || 0,
-                "Percentage of Total": `${alertCounts.lowBatteryCount ? ((alertCounts.lowBatteryCount / dashboardStats.totalDevices) * 100).toFixed(1) : 0}%`,
-                "Priority": "Medium",
-                "Action Required": "Monitor battery level"
-              };
-              break;
-            case 'good-battery':
-              title = "Good Battery Status";
-              details = {
-                "Good Battery Devices": alertCounts.goodBatteryCount || 0,
-                "Percentage of Total": `${alertCounts.goodBatteryCount ? ((alertCounts.goodBatteryCount / dashboardStats.totalDevices) * 100).toFixed(1) : 0}%`,
-                "Status": "Good",
-                "Action Required": "None"
-              };
-              break;
-            case 'no-power':
-              title = "No Power Alerts";
-              details = {
-                "No Power Devices": alertCounts.noPowerCount || 0,
-                "Percentage of Total": `${alertCounts.noPowerCount ? ((alertCounts.noPowerCount / dashboardStats.totalDevices) * 100).toFixed(1) : 0}%`,
-                "Priority": "High",
-                "Action Required": "Check power connection"
-              };
-              break;
-            case 'power-off':
-              title = "Power Off Alerts";
-              details = {
-                "Power Off Devices": alertCounts.powerOffCount || 0,
-                "Percentage of Total": `${alertCounts.powerOffCount ? ((alertCounts.powerOffCount / dashboardStats.totalDevices) * 100).toFixed(1) : 0}%`,
-                "Priority": "High",
-                "Action Required": "Check power switch"
-              };
-              break;
-            case 'good-power':
-              title = "Good Power Status";
-              details = {
-                "Devices with Good Power": Math.max(
-                  0,
-                  dashboardStats.totalDevices - 
-                  alertCounts.noPowerCount - 
-                  alertCounts.powerOffCount - 
-                  alertCounts.criticalBatteryCount - 
-                  alertCounts.lowBatteryCount
-                ) || 0,
-                "Percentage of Total": `${Math.max(
-                  0,
-                  dashboardStats.totalDevices - 
-                  alertCounts.noPowerCount - 
-                  alertCounts.powerOffCount - 
-                  alertCounts.criticalBatteryCount - 
-                  alertCounts.lowBatteryCount
-                ) ? ((Math.max(
-                  0,
-                  dashboardStats.totalDevices - 
-                  alertCounts.noPowerCount - 
-                  alertCounts.powerOffCount - 
-                  alertCounts.criticalBatteryCount - 
-                  alertCounts.lowBatteryCount
-                ) / dashboardStats.totalDevices) * 100).toFixed(1) : 0}%`,
-                "Status": "Good",
-                "Action Required": "None"
-              };
-              break;
-            default:
-              title = "Alert Summary";
-              details = {
-                "Total Alerts": dashboardStats.totalAlerts || 0
-              };
-          }
-          
-          setDeviceModalData({
-            title,
-            details
-          });
+          setDeviceModalData({ title, details });
           setDeviceModalOpen(true);
         }}
+        themeColors={themeColors}
       />
 
-      {/* Charts Section */}
+      {/* Charts Section with Recent Alerts on the right */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Alert Distribution Chart */}
         <DeviceStatusDistribution
-          realtimeStatus={realtimeStatus}
+          realtimeStatus={realtimeStatusCache || realtimeStatus}
           selectedAlertType={selectedAlertType}
           onRefresh={handleRefresh}
-          isLoading={refreshing}
+          isLoading={false}
         />
 
-        {/* Recent Activity Chart or additional stats */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">
-            Recent Activity
-          </h3>
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600 dark:text-gray-400">
-                24h Entries
-              </span>
-              <span className="font-bold text-gray-800 dark:text-white">
-                {dashboardData.recentActivity24h}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600 dark:text-gray-400">
-                Total Entries
-              </span>
-              <span className="font-bold text-gray-800 dark:text-white">
-                {dashboardData.totalEntries?.toLocaleString()}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600 dark:text-gray-400">
-                System Uptime
-              </span>
-              <span className="font-bold text-green-600">
-                {dashboardData.uptime}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600 dark:text-gray-400">
-                Today's Usage
-              </span>
-              <span className="font-bold text-blue-600">
-                {dashboardData.todayUsage}%
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Alerts Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-lg font-bold text-gray-800 dark:text-white">
-            Recent Alerts
-          </h3>
-          <Link
-            to="/admin/alerts"
-            className="text-blue-600 hover:text-blue-700 font-medium text-sm"
-          >
-            View All
-          </Link>
-        </div>
-
-        <div className="space-y-3">
-          {dashboardData.recentAlerts?.slice(0, 5).map((alert) => (
-            <div
-              key={alert.id}
-              className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+        {/* Recent Alerts Section (now in right column) */}
+        <div
+          className="rounded-2xl p-6 shadow-lg border flex flex-col"
+          style={{
+            background: themeColors.card,
+            borderColor: themeColors.border,
+            transition: 'background 0.3s, border-color 0.3s',
+          }}
+        >
+          <div className="flex justify-between items-center mb-6">
+            <h3
+              className="text-lg font-bold"
+              style={{ color: themeColors.heading }}
             >
-              <div className="flex items-center space-x-3">
+              Recent Alerts
+            </h3>
+            <Link
+              to="/admin/alerts"
+              className="font-medium text-sm"
+              style={{ color: themeColors.primary }}
+            >
+              View All
+            </Link>
+          </div>
+
+          <div className="space-y-3 flex-1">
+            {(dashboardDataCache || dashboardData).recentAlerts
+              ?.slice(0, 5)
+              .map((alert) => (
                 <div
-                  className={`w-3 h-3 rounded-full ${
-                    alert.type === "error"
-                      ? "bg-red-500"
-                      : alert.type === "warning"
-                      ? "bg-yellow-500"
-                      : "bg-blue-500"
-                  }`}
-                />
-                <div>
-                  <div className="font-medium text-gray-800 dark:text-white">
-                    {alert.device_name}
+                  key={alert.id}
+                  className="flex items-center justify-between p-3 rounded-lg transition-colors"
+                  style={{
+                    background: themeColors.surface,
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div
+                      className="w-3 h-3 rounded-full"
+                      style={{
+                        background:
+                          alert.type === 'error'
+                            ? themeColors.danger
+                            : alert.type === 'warning'
+                            ? themeColors.warning
+                            : themeColors.primary,
+                      }}
+                    />
+                    <div>
+                      <div
+                        className="font-medium"
+                        style={{ color: themeColors.heading }}
+                      >
+                        {alert.device_name}
+                      </div>
+                      <div
+                        className="text-sm"
+                        style={{ color: themeColors.muted }}
+                      >
+                        {alert.message}
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    {alert.message}
+                  <div
+                    className="text-sm"
+                    style={{ color: themeColors.muted }}
+                  >
+                    {alert.timestamp}
                   </div>
                 </div>
+              )) || (
+              <div
+                className="text-center py-8"
+                style={{ color: themeColors.muted }}
+              >
+                No recent alerts
               </div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">
-                {alert.timestamp}
-              </div>
-            </div>
-          )) || (
-            <div className="text-center text-gray-500 dark:text-gray-400 py-8">
-              No recent alerts
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Link
-          to="/admin/devices"
-          className="block p-6 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-2xl shadow-lg transition-all duration-300 hover:shadow-xl transform hover:scale-105"
-        >
-          <div className="flex items-center space-x-3">
-            <Smartphone className="h-8 w-8" />
-            <div>
-              <div className="text-xl font-bold">Manage Devices</div>
-              <div className="text-blue-100">
-                Add, edit, and monitor devices
-              </div>
-            </div>
-          </div>
-        </Link>
-
-        <Link
-          to="/admin/analytics"
-          className="block p-6 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-2xl shadow-lg transition-all duration-300 hover:shadow-xl transform hover:scale-105"
-        >
-          <div className="flex items-center space-x-3">
-            <BarChart3 className="h-8 w-8" />
-            <div>
-              <div className="text-xl font-bold">View Analytics</div>
-              <div className="text-green-100">Detailed usage reports</div>
-            </div>
-          </div>
-        </Link>
-
-        <Link
-          to="/admin/users"
-          className="block p-6 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-2xl shadow-lg transition-all duration-300 hover:shadow-xl transform hover:scale-105"
-        >
-          <div className="flex items-center space-x-3">
-            <Users className="h-8 w-8" />
-            <div>
-              <div className="text-xl font-bold">User Management</div>
-              <div className="text-purple-100">Manage user accounts</div>
-            </div>
-          </div>
-        </Link>
-      </div>
+      {/* Quick Actions removed as requested */}
     </div>
   );
 };
+
+// --- Local Storage & Caching Logic ---
+// This should be placed at the top level of the file, but for patching, add here and move as needed
+
+// Helper to cache and restore dashboard data
+function useDashboardCache(key, data, setData) {
+  // On mount, try to load from localStorage
+  useEffect(() => {
+    const cached = localStorage.getItem(key);
+    if (cached) {
+      try {
+        setData(JSON.parse(cached));
+      } catch {}
+    }
+    // eslint-disable-next-line
+  }, []);
+
+  // On data change, update cache
+  useEffect(() => {
+    if (data) {
+      localStorage.setItem(key, JSON.stringify(data));
+    }
+  }, [data, key]);
+}
+
+// Usage in AdminDashboard:
+// useDashboardCache("dashboardData", dashboardData, setDashboardData);
+// useDashboardCache("realtimeStatus", realtimeStatus, setRealtimeStatus);
+
+// You must call these hooks in the main AdminDashboard component body, after state is defined.
 
 export default AdminDashboard;

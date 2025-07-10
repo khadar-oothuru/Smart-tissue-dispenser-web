@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-// import { useAuth } from "../../hooks/useAuth"; // Will be used when connecting to API
+import React, { useState, useEffect } from "react";
+import { useAuth } from "../../hooks/useAuth";
 import { useTheme } from "../../context/ThemeContext";
 import {
   Users,
@@ -17,9 +17,10 @@ import RoleChangeModal from "./RoleChangeModal";
 import UserProfileModal from "./UserProfileModal";
 import UserItem from "./UserItem";
 import UserItemClean from "./UserItemClean";
+import adminService from "../../services/AdminService";
 
 const UserManagement = () => {
-  // const { accessToken } = useAuth(); // Will be used when connecting to API
+  const { accessToken, user, isAuthenticated } = useAuth();
   const { themeColors } = useTheme();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRole, setFilterRole] = useState("all");
@@ -33,68 +34,123 @@ const UserManagement = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [viewMode, setViewMode] = useState("table"); // table, cards, clean
+  // Only show user cards, no view mode
 
-  // Mock data for now - will be replaced with API calls
-  const [users, setUsers] = useState([
-    {
-      id: 1,
-      first_name: "John",
-      last_name: "Doe",
-      email: "john.doe@example.com",
-      role: "admin",
-      is_active: true,
-      last_login: "2024-01-15T10:30:00Z",
-    },
-    {
-      id: 2,
-      first_name: "Jane",
-      last_name: "Smith",
-      email: "jane.smith@example.com",
-      role: "manager",
-      is_active: true,
-      last_login: "2024-01-14T15:45:00Z",
-    },
-    {
-      id: 3,
-      first_name: "Bob",
-      last_name: "Johnson",
-      email: "bob.johnson@example.com",
-      role: "user",
-      is_active: false,
-      last_login: "2024-01-10T09:20:00Z",
-    },
-  ]);
+  // Users state from API
+  const [users, setUsers] = useState([]);
+  // Stats state from API
+  const [stats, setStats] = useState({
+    total_users: 0,
+    active_users: 0,
+    admin_count: 0,
+    new_users_this_month: 0,
+  });
 
-  // Mock stats
-  const stats = {
-    total_users: users.length,
-    active_users: users.filter((u) => u.is_active).length,
-    admin_count: users.filter((u) => u.role === "admin").length,
-    new_users_this_month: 2,
-  };
+  // Fetch users and stats from API
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!accessToken) return;
+      try {
+        adminService.setAuthContext({ accessToken, user });
+        setLoading(true);
+        setError(null);
+        const [usersData, statsDataRaw] = await Promise.all([
+          adminService.fetchUsers(),
+          adminService.fetchAdminStats(),
+        ]);
+        // If API returns { results: [...] } (pagination), use results, else use array
+        if (Array.isArray(usersData)) {
+          setUsers(usersData);
+        } else if (usersData && Array.isArray(usersData.results)) {
+          setUsers(usersData.results);
+        } else if (usersData && Array.isArray(usersData.users)) {
+          setUsers(usersData.users);
+        } else if (usersData && Array.isArray(usersData.data)) {
+          setUsers(usersData.data);
+        } else {
+          setUsers([]);
+        }
+        // Robustly map statsDataRaw to expected keys
+        const statsData = statsDataRaw || {};
+        // Fallback: calculate admin_count and new_users_this_month from users if missing or zero
+        let usersList = [];
+        if (Array.isArray(usersData)) {
+          usersList = usersData;
+        } else if (usersData && Array.isArray(usersData.results)) {
+          usersList = usersData.results;
+        } else if (usersData && Array.isArray(usersData.users)) {
+          usersList = usersData.users;
+        } else if (usersData && Array.isArray(usersData.data)) {
+          usersList = usersData.data;
+        }
+
+        // Calculate admin count from users if backend value is missing or 0
+        let adminCount = statsData.admin_count ?? statsData.adminCount ?? 0;
+        if (!adminCount && usersList.length > 0) {
+          adminCount = usersList.filter((u) => u.role === "admin").length;
+        }
+
+        // Calculate new users this month if backend value is missing or 0
+        let newUsersThisMonth =
+          statsData.new_users_this_month ?? statsData.newUsersThisMonth ?? 0;
+        if (!newUsersThisMonth && usersList.length > 0) {
+          const now = new Date();
+          const thisMonth = now.getMonth();
+          const thisYear = now.getFullYear();
+          newUsersThisMonth = usersList.filter((u) => {
+            const joined = new Date(
+              u.date_joined || u.created_at || u.last_login
+            );
+            return (
+              joined.getMonth() === thisMonth &&
+              joined.getFullYear() === thisYear
+            );
+          }).length;
+        }
+
+        setStats({
+          total_users:
+            statsData.total_users ?? statsData.totalUsers ?? usersList.length,
+          active_users:
+            statsData.active_users ??
+            statsData.activeUsers ??
+            usersList.filter((u) => u.is_active).length,
+          admin_count: adminCount,
+          new_users_this_month: newUsersThisMonth,
+        });
+      } catch (err) {
+        setError(err.message || "Failed to fetch users or stats");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accessToken]);
 
   // Form states
   const [formData, setFormData] = useState({
-    first_name: "",
-    last_name: "",
+    username: "",
     email: "",
     phone: "",
     role: "user",
     is_active: true,
   });
 
-  // Filter users based on search and filters
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch =
-      user.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email?.toLowerCase().includes(searchTerm.toLowerCase());
+  // Filter users based on search and filters, and exclude the logged-in user
+  const filteredUsers = users.filter((u) => {
+    // Exclude the logged-in user
+    if (user && (u.id === user.id || u.username === user.username))
+      return false;
 
-    const matchesRole = filterRole === "all" || user.role === filterRole;
+    const matchesSearch =
+      u.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      u.email?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesRole = filterRole === "all" || u.role === filterRole;
     const matchesStatus =
       filterStatus === "all" ||
-      (filterStatus === "active" ? user.is_active : !user.is_active);
+      (filterStatus === "active" ? u.is_active : !u.is_active);
 
     return matchesSearch && matchesRole && matchesStatus;
   });
@@ -121,14 +177,8 @@ const UserManagement = () => {
     try {
       setLoading(true);
       setError(null);
-
-      // Mock API call
-      const newUser = {
-        id: Date.now(),
-        ...userData,
-        last_login: new Date().toISOString(),
-      };
-
+      adminService.setAuthContext({ accessToken, user });
+      const newUser = await adminService.createUser(userData);
       setUsers((prev) => [...prev, newUser]);
       setShowAddModal(false);
       setFormData({
@@ -150,12 +200,9 @@ const UserManagement = () => {
     try {
       setLoading(true);
       setError(null);
-
-      // Mock API call
-      const updatedUser = { ...userData, id: userId };
-      setUsers((prev) =>
-        prev.map((user) => (user.id === userId ? updatedUser : user))
-      );
+      adminService.setAuthContext({ accessToken, user });
+      const updatedUser = await adminService.updateUser(userId, userData);
+      setUsers((prev) => prev.map((u) => (u.id === userId ? updatedUser : u)));
       setShowEditModal(false);
       setEditingUser(null);
     } catch (err) {
@@ -167,13 +214,12 @@ const UserManagement = () => {
 
   const handleDeleteUser = async (userId) => {
     if (!window.confirm("Are you sure you want to delete this user?")) return;
-
     try {
       setLoading(true);
       setError(null);
-
-      // Mock API call
-      setUsers((prev) => prev.filter((user) => user.id !== userId));
+      adminService.setAuthContext({ accessToken, user });
+      await adminService.deleteUser(userId);
+      setUsers((prev) => prev.filter((u) => u.id !== userId));
       setSelectedUsers((prev) => prev.filter((id) => id !== userId));
     } catch (err) {
       setError(err.message || "Failed to delete user");
@@ -189,15 +235,12 @@ const UserManagement = () => {
       )
     )
       return;
-
     try {
       setLoading(true);
       setError(null);
-
-      // Mock API call
-      setUsers((prev) =>
-        prev.filter((user) => !selectedUsers.includes(user.id))
-      );
+      adminService.setAuthContext({ accessToken, user });
+      await Promise.all(selectedUsers.map((id) => adminService.deleteUser(id)));
+      setUsers((prev) => prev.filter((u) => !selectedUsers.includes(u.id)));
       setSelectedUsers([]);
     } catch (err) {
       setError(err.message || "Failed to delete users");
@@ -210,15 +253,9 @@ const UserManagement = () => {
     try {
       setLoading(true);
       setError(null);
-
-      // Mock API call
-      const updatedUser = {
-        ...users.find((u) => u.id === userId),
-        is_active: isActive,
-      };
-      setUsers((prev) =>
-        prev.map((user) => (user.id === userId ? updatedUser : user))
-      );
+      adminService.setAuthContext({ accessToken, user });
+      const updatedUser = await adminService.updateUserStatus(userId, isActive);
+      setUsers((prev) => prev.map((u) => (u.id === userId ? updatedUser : u)));
     } catch (err) {
       setError(err.message || "Failed to update user status");
     } finally {
@@ -231,19 +268,17 @@ const UserManagement = () => {
     setShowRoleModal(true);
   };
 
-  const handleRoleUpdate = (userId, newRole) => {
+  const handleRoleUpdate = async (userId, newRole) => {
     try {
       setLoading(true);
       setError(null);
-
-      // Mock API call
-      const updatedUser = {
-        ...users.find((u) => u.id === userId),
-        role: newRole,
-      };
-      setUsers((prev) =>
-        prev.map((user) => (user.id === userId ? updatedUser : user))
-      );
+      adminService.setAuthContext({ accessToken, user });
+      const updatedUser = await adminService.updateUserRole(userId, newRole);
+      setUsers((prev) => prev.map((u) => (u.id === userId ? updatedUser : u)));
+      // If the current filterRole would hide the updated user, update the filter to the new role BEFORE closing the modal
+      if (filterRole !== "all" && filterRole !== newRole) {
+        setFilterRole(newRole);
+      }
       setShowRoleModal(false);
     } catch (err) {
       setError(err.message || "Failed to update user role");
@@ -279,7 +314,7 @@ const UserManagement = () => {
   };
 
   // Stats cards
-  const StatCard = ({ title, value, icon: Icon, color, trend }) => (
+  const StatCard = ({ title, value, icon: Icon, color }) => (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
       <div className="flex items-center justify-between">
         <div>
@@ -294,14 +329,6 @@ const UserManagement = () => {
           <Icon className="h-6 w-6" />
         </div>
       </div>
-      {trend && (
-        <div className="mt-4 flex items-center">
-          <span className="text-sm text-gray-500 dark:text-gray-400">
-            {trend > 0 ? "+" : ""}
-            {trend}% from last month
-          </span>
-        </div>
-      )}
     </div>
   );
 
@@ -318,6 +345,7 @@ const UserManagement = () => {
           </p>
         </div>
         <div className="mt-4 flex space-x-3 md:mt-0 md:ml-4">
+          {/*
           <button
             onClick={() => setShowAddModal(true)}
             className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
@@ -329,6 +357,7 @@ const UserManagement = () => {
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </button>
+          */}
         </div>
       </div>
 
@@ -339,28 +368,24 @@ const UserManagement = () => {
           value={stats.total_users}
           icon={Users}
           color="bg-blue-100 text-blue-600"
-          trend={5}
         />
         <StatCard
           title="Active Users"
           value={stats.active_users}
           icon={CheckCircle}
           color="bg-green-100 text-green-600"
-          trend={2}
         />
         <StatCard
           title="Admins"
           value={stats.admin_count}
           icon={Shield}
           color="bg-purple-100 text-purple-600"
-          trend={0}
         />
         <StatCard
           title="New This Month"
           value={stats.new_users_this_month}
           icon={UserPlus}
           color="bg-orange-100 text-orange-600"
-          trend={12}
         />
       </div>
 
@@ -387,7 +412,6 @@ const UserManagement = () => {
           >
             <option value="all">All Roles</option>
             <option value="admin">Admin</option>
-            <option value="manager">Manager</option>
             <option value="user">User</option>
           </select>
 
@@ -402,32 +426,8 @@ const UserManagement = () => {
             <option value="inactive">Inactive</option>
           </select>
 
-          {/* View Mode & Bulk Actions */}
+          {/* Bulk Actions only, no view mode */}
           <div className="flex space-x-2">
-            <div className="flex rounded-md shadow-sm" role="group">
-              <button
-                type="button"
-                onClick={() => setViewMode("table")}
-                className={`px-4 py-2 text-sm font-medium ${viewMode === "table" ? "bg-blue-600 text-white" : "bg-white text-gray-700 dark:bg-gray-700 dark:text-gray-200"} border border-gray-300 rounded-l-lg hover:bg-gray-100 dark:hover:bg-gray-600`}
-              >
-                Table
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("cards")}
-                className={`px-4 py-2 text-sm font-medium ${viewMode === "cards" ? "bg-blue-600 text-white" : "bg-white text-gray-700 dark:bg-gray-700 dark:text-gray-200"} border-t border-b border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600`}
-              >
-                Cards
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("clean")}
-                className={`px-4 py-2 text-sm font-medium ${viewMode === "clean" ? "bg-blue-600 text-white" : "bg-white text-gray-700 dark:bg-gray-700 dark:text-gray-200"} border border-gray-300 rounded-r-lg hover:bg-gray-100 dark:hover:bg-gray-600`}
-              >
-                Clean
-              </button>
-            </div>
-
             {selectedUsers.length > 0 && (
               <button
                 onClick={handleBulkDelete}
@@ -441,210 +441,25 @@ const UserManagement = () => {
         </div>
       </div>
 
-      {/* Users Display */}
-      {viewMode === "table" && (
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead className="bg-gray-50 dark:bg-gray-700">
-                <tr>
-                  <th className="px-6 py-3 text-left">
-                    <input
-                      type="checkbox"
-                      checked={
-                        selectedUsers.length === filteredUsers.length &&
-                        filteredUsers.length > 0
-                      }
-                      onChange={handleSelectAll}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    User
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Role
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Last Active
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {filteredUsers.map((user) => {
-                  const roleConfig = getRoleConfig(user.role);
-                  const statusConfig = getStatusConfig(user.is_active);
-                  const RoleIcon = roleConfig.icon;
-                  const StatusIcon = statusConfig.icon;
-
-                  return (
-                    <tr
-                      key={user.id}
-                      className="hover:bg-gray-50 dark:hover:bg-gray-700"
-                    >
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <input
-                          type="checkbox"
-                          checked={selectedUsers.includes(user.id)}
-                          onChange={() => handleSelectUser(user.id)}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div 
-                            className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center cursor-pointer"
-                            onClick={() => handleViewProfile(user)}
-                          >
-                            <span className="text-sm font-medium text-gray-700">
-                              {user.first_name[0]}
-                              {user.last_name[0]}
-                            </span>
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900 dark:text-white">
-                              {user.first_name} {user.last_name}
-                            </div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400">
-                              {user.email}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${roleConfig.color} cursor-pointer`}
-                          onClick={() => handleRoleChange(user)}
-                        >
-                          <RoleIcon className="h-3 w-3 mr-1" />
-                          {user.role}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusConfig.color}`}
-                        >
-                          <StatusIcon className="h-3 w-3 mr-1" />
-                          {user.is_active ? "Active" : "Inactive"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        {new Date(user.last_login).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => handleViewProfile(user)}
-                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                            title="View Profile"
-                          >
-                            <Users className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              setEditingUser(user);
-                              setFormData({
-                                first_name: user.first_name || "",
-                                last_name: user.last_name || "",
-                                email: user.email || "",
-                                phone: user.phone || "",
-                                role: user.role || "user",
-                                is_active: user.is_active,
-                              });
-                              setShowEditModal(true);
-                            }}
-                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                            title="Edit User"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleRoleChange(user)}
-                            className="text-amber-600 hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-300"
-                            title="Change Role"
-                          >
-                            <UserCog className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() =>
-                              handleToggleUserStatus(user.id, !user.is_active)
-                            }
-                            className={
-                              user.is_active
-                                ? "text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                                : "text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
-                            }
-                            title={user.is_active ? "Deactivate" : "Activate"}
-                          >
-                            {user.is_active ? (
-                              <XCircle className="h-4 w-4" />
-                            ) : (
-                              <CheckCircle className="h-4 w-4" />
-                            )}
-                          </button>
-                          <button
-                            onClick={() => handleDeleteUser(user.id)}
-                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                            title="Delete User"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* Card View */}
-      {viewMode === "cards" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredUsers.map((user) => (
-            <UserItem 
-              key={user.id} 
-              user={{
-                ...user,
-                username: user.username || `${user.first_name.toLowerCase()}.${user.last_name.toLowerCase()}`,
-                full_name: `${user.first_name} ${user.last_name}`,
-                date_joined_formatted: new Date(user.last_login).toLocaleDateString()
-              }} 
-              onRoleChange={() => handleRoleChange(user)}
-              onDelete={() => handleDeleteUser(user.id)}
-              onViewProfile={() => handleViewProfile(user)}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Clean View */}
-      {viewMode === "clean" && (
-        <div className="grid grid-cols-1 gap-4">
-          {filteredUsers.map((user) => (
-            <UserItemClean 
-              key={user.id} 
-              user={{
-                ...user,
-                username: user.username || `${user.first_name.toLowerCase()}.${user.last_name.toLowerCase()}`,
-                full_name: `${user.first_name} ${user.last_name}`,
-                date_joined_formatted: new Date(user.last_login).toLocaleDateString()
-              }} 
-              onRoleChange={() => handleRoleChange(user)}
-              onDelete={() => handleDeleteUser(user.id)}
-              onViewProfile={() => handleViewProfile(user)}
-            />
-          ))}
-        </div>
-      )}
+      {/* Users Display: Only User Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredUsers.map((user) => (
+          <UserItem
+            key={user.id}
+            user={{
+              ...user,
+              username: user.username,
+              full_name: user.username,
+              date_joined_formatted: new Date(
+                user.last_login
+              ).toLocaleDateString(),
+            }}
+            onRoleChange={() => handleRoleChange(user)}
+            onDelete={() => handleDeleteUser(user.id)}
+            onViewProfile={() => handleViewProfile(user)}
+          />
+        ))}
+      </div>
 
       {filteredUsers.length === 0 && (
         <div className="text-center py-12">
@@ -690,28 +505,14 @@ const UserManagement = () => {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      First Name
+                      Username
                     </label>
                     <input
                       type="text"
                       required
-                      value={formData.first_name}
+                      value={formData.username}
                       onChange={(e) =>
-                        setFormData({ ...formData, first_name: e.target.value })
-                      }
-                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Last Name
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.last_name}
-                      onChange={(e) =>
-                        setFormData({ ...formData, last_name: e.target.value })
+                        setFormData({ ...formData, username: e.target.value })
                       }
                       className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     />
@@ -755,7 +556,6 @@ const UserManagement = () => {
                       className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     >
                       <option value="user">User</option>
-                      <option value="manager">Manager</option>
                       <option value="admin">Admin</option>
                     </select>
                   </div>
@@ -815,28 +615,14 @@ const UserManagement = () => {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      First Name
+                      Username
                     </label>
                     <input
                       type="text"
                       required
-                      value={formData.first_name}
+                      value={formData.username}
                       onChange={(e) =>
-                        setFormData({ ...formData, first_name: e.target.value })
-                      }
-                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Last Name
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.last_name}
-                      onChange={(e) =>
-                        setFormData({ ...formData, last_name: e.target.value })
+                        setFormData({ ...formData, username: e.target.value })
                       }
                       className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     />
@@ -880,7 +666,6 @@ const UserManagement = () => {
                       className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     >
                       <option value="user">User</option>
-                      <option value="manager">Manager</option>
                       <option value="admin">Admin</option>
                     </select>
                   </div>
@@ -945,9 +730,9 @@ const UserManagement = () => {
           visible={showProfileModal}
           user={{
             ...selectedUser,
-            username: selectedUser.username || `${selectedUser.first_name.toLowerCase()}.${selectedUser.last_name.toLowerCase()}`,
+            username: selectedUser.username,
             date_joined: selectedUser.date_joined || selectedUser.last_login,
-            profile_picture: selectedUser.profile_picture || null
+            profile_picture: selectedUser.profile_picture || null,
           }}
           onClose={() => {
             setShowProfileModal(false);
@@ -958,6 +743,5 @@ const UserManagement = () => {
     </div>
   );
 };
-
 
 export default UserManagement;

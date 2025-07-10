@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import useTheme from "../../hooks/useThemeContext";
 import {
   AlertTriangle,
   AlertCircle,
@@ -21,7 +22,10 @@ import {
 } from "lucide-react";
 
 // Import utility functions from LandingPageTop
-import { getBatteryAndPowerAlertCounts, getTissueAlertCounts } from "./LandingPageTop";
+import {
+  getBatteryAndPowerAlertCounts,
+  getTissueAlertCounts,
+} from "./LandingPageTop";
 
 const SummaryCards = ({
   dashboardData,
@@ -34,17 +38,21 @@ const SummaryCards = ({
   const alertCounts = useMemo(() => {
     // Get tissue alert counts
     const tissueAlerts = getTissueAlertCounts(realtimeStatus);
-    
+
     // Get battery and power alert counts
     const batteryAlerts = getBatteryAndPowerAlertCounts(realtimeStatus);
-    
+
     // Calculate good battery count (devices with battery > 20%)
-    const goodBatteryCount = Array.isArray(realtimeStatus) ? 
-      realtimeStatus.filter(device => {
-        const batteryPercentage = typeof device.battery_percentage === "number" ? device.battery_percentage : null;
-        return batteryPercentage !== null && batteryPercentage > 20;
-      }).length : 0;
-    
+    const goodBatteryCount = Array.isArray(realtimeStatus)
+      ? realtimeStatus.filter((device) => {
+          const batteryPercentage =
+            typeof device.battery_percentage === "number"
+              ? device.battery_percentage
+              : null;
+          return batteryPercentage !== null && batteryPercentage > 20;
+        }).length
+      : 0;
+
     return {
       // Tissue alerts
       emptyCount: tissueAlerts.emptyCount,
@@ -52,7 +60,7 @@ const SummaryCards = ({
       fullCount: tissueAlerts.fullCount,
       tamperCount: tissueAlerts.tamperCount,
       totalTissueAlerts: tissueAlerts.totalTissueAlerts,
-      
+
       // Battery alerts
       lowBatteryCount: batteryAlerts.lowBatteryCount,
       criticalBatteryCount: batteryAlerts.criticalBatteryCount,
@@ -102,28 +110,36 @@ const SummaryCards = ({
     cards = [
       {
         title: "Battery Off",
-        value: alertCounts.batteryOffCount || dashboardData?.batteryOffDevices || 0,
+        value:
+          alertCounts.batteryOffCount || dashboardData?.batteryOffDevices || 0,
         icon: "battery-off",
         onPress: () => onAlertPress?.("battery-off"),
         fullWidth: false,
       },
       {
         title: "Critical Battery",
-        value: alertCounts.criticalBatteryCount || dashboardData?.criticalDevices || 0,
+        value:
+          alertCounts.criticalBatteryCount ||
+          dashboardData?.criticalDevices ||
+          0,
         icon: "critical",
         onPress: () => onAlertPress?.("critical-battery"),
         fullWidth: false,
       },
       {
         title: "Low Battery",
-        value: alertCounts.lowBatteryCount || dashboardData?.lowBatteryDevices || 0,
+        value:
+          alertCounts.lowBatteryCount || dashboardData?.lowBatteryDevices || 0,
         icon: "battery",
         onPress: () => onAlertPress?.("low-battery"),
         fullWidth: false,
       },
       {
         title: "Good Battery",
-        value: alertCounts.goodBatteryCount || dashboardData?.goodBatteryDevices || 0,
+        value:
+          alertCounts.goodBatteryCount ||
+          dashboardData?.goodBatteryDevices ||
+          0,
         icon: "good-battery",
         onPress: () => onAlertPress?.("good-battery"),
         fullWidth: false,
@@ -147,7 +163,10 @@ const SummaryCards = ({
       },
       {
         title: "Critical Battery",
-        value: alertCounts.criticalBatteryCount || dashboardData?.criticalDevices || 0,
+        value:
+          alertCounts.criticalBatteryCount ||
+          dashboardData?.criticalDevices ||
+          0,
         icon: "critical",
         onPress: () => onAlertPress?.("critical-battery"),
         fullWidth: false,
@@ -190,14 +209,44 @@ const SummaryCard = ({ card, isLoading }) => {
   const Icon = getCardIcon(card.icon);
   const cardColor = getCardColor(card.icon);
   const bgColor = getBgColor(card.icon);
+  const { isDark, themeColors } = useTheme();
+
+  // Gradient backgrounds for light mode (can use themeColors if desired)
+  const gradientMap = {
+    empty: `linear-gradient(135deg, #ffe5e5 0%, ${themeColors.background} 100%)`,
+    low: `linear-gradient(135deg, #fffbe5 0%, ${themeColors.background} 100%)`,
+    full: `linear-gradient(135deg, #e5f7ff 0%, ${themeColors.background} 100%)`,
+    tamper: `linear-gradient(135deg, #f3e5ff 0%, ${themeColors.background} 100%)`,
+    critical: `linear-gradient(135deg, #ffe5e5 0%, ${themeColors.background} 100%)`,
+    battery: `linear-gradient(135deg, #fffbe5 0%, ${themeColors.background} 100%)`,
+    "good-battery": `linear-gradient(135deg, #e5ffe5 0%, ${themeColors.background} 100%)`,
+    "no-power": `linear-gradient(135deg, #ffe5e5 0%, ${themeColors.background} 100%)`,
+    "power-off": `linear-gradient(135deg, #fffbe5 0%, ${themeColors.background} 100%)`,
+    "good-power": `linear-gradient(135deg, #e5ffe5 0%, ${themeColors.background} 100%)`,
+    total: `linear-gradient(135deg, #ffe5e5 0%, ${themeColors.background} 100%)`,
+    "battery-off": `linear-gradient(135deg, #f0f0f0 0%, ${themeColors.background} 100%)`,
+  };
+
+  // Use gradient in light mode, fallback to dark bg in dark mode
+  const cardBgStyle = !isDark
+    ? {
+        background:
+          gradientMap[card.icon] ||
+          `linear-gradient(135deg, ${themeColors.background} 0%, #fff 100%)`,
+        border: `1px solid ${themeColors.border}`,
+        boxShadow: "0 1px 3px rgba(0,0,0,0.07)",
+        transition: "background 0.3s, box-shadow 0.3s",
+      }
+    : {};
 
   return (
     <div
       className={`${bgColor} rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-105 transform group relative overflow-hidden`}
       onClick={card.onPress}
+      style={cardBgStyle}
     >
-      {/* Background gradient effect */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white/50 via-transparent to-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      {/* Background gradient effect for hover */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white/50 via-transparent to-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
       <div className="relative z-10">
         <div className="flex items-center justify-between mb-4">

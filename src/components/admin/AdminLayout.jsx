@@ -38,12 +38,7 @@ const AdminLayout = ({ children }) => {
       icon: Home,
       description: "Overview & stats",
     },
-    {
-      name: "Users",
-      href: "/admin/users",
-      icon: Users,
-      description: "Manage users",
-    },
+   
     {
       name: "Devices",
       href: "/admin/devices",
@@ -61,6 +56,12 @@ const AdminLayout = ({ children }) => {
       href: "/admin/analytics",
       icon: FileText,
       description: "Generate reports",
+    },
+     {
+      name: "Users",
+      href: "/admin/users",
+      icon: Users,
+      description: "Manage users",
     },
      {
       name: "Settings",
