@@ -16,22 +16,38 @@ console.log("API URL:", API_URL);
 axios.defaults.timeout = 45000; // 45 seconds default timeout
 
 // Add request interceptor for logging
-axios.interceptors.request.use(request => {
-  console.log(`🔄 API Request: ${request.method?.toUpperCase()} ${request.url}`);
+axios.interceptors.request.use((request) => {
+  console.log(
+    `🔄 API Request: ${request.method?.toUpperCase()} ${request.url}`
+  );
   return request;
 });
 
 // Add response interceptor for logging
 axios.interceptors.response.use(
-  response => {
-    console.log(`✅ API Response: ${response.config.method?.toUpperCase()} ${response.config.url} (${response.status})`);
+  (response) => {
+    console.log(
+      `✅ API Response: ${response.config.method?.toUpperCase()} ${
+        response.config.url
+      } (${response.status})`
+    );
     return response;
   },
-  error => {
+  (error) => {
     if (error.response) {
-      console.error(`❌ API Error: ${error.config?.method?.toUpperCase()} ${error.config?.url} (${error.response.status})`, error.response.data);
+      console.error(
+        `❌ API Error: ${error.config?.method?.toUpperCase()} ${
+          error.config?.url
+        } (${error.response.status})`,
+        error.response.data
+      );
     } else if (error.request) {
-      console.error(`❌ API Error: No response received for ${error.config?.method?.toUpperCase()} ${error.config?.url}`, error.message);
+      console.error(
+        `❌ API Error: No response received for ${error.config?.method?.toUpperCase()} ${
+          error.config?.url
+        }`,
+        error.message
+      );
     } else {
       console.error(`❌ API Error: Request failed`, error.message);
     }
@@ -324,40 +340,45 @@ export async function submitContactForm(formData) {
 
 export async function fetchDevices(token, retryCount = 2, retryDelay = 2000) {
   let lastError;
-  
+
   for (let attempt = 0; attempt <= retryCount; attempt++) {
     try {
       // If this is a retry attempt, log it
       if (attempt > 0) {
         console.log(`Retry attempt ${attempt}/${retryCount} for devices...`);
       }
-      
+
       const res = await axios.get(`${API_BASE_URL}/devices/`, {
         headers: authHeaders(token, null),
         timeout: 45000, // Increase timeout to 45 seconds
       });
-      
+
       return res.data;
     } catch (error) {
       lastError = error;
-      
+
       // Only retry on timeout or network errors, not on 4xx/5xx responses
-      const isTimeoutOrNetworkError = 
-        error.code === 'ECONNABORTED' || 
-        error.message.includes('timeout') ||
+      const isTimeoutOrNetworkError =
+        error.code === "ECONNABORTED" ||
+        error.message.includes("timeout") ||
         !error.response;
-      
+
       if (!isTimeoutOrNetworkError || attempt >= retryCount) {
         break; // Don't retry on non-timeout errors or if we've used all retries
       }
-      
+
       // Wait before retrying
-      await new Promise(resolve => setTimeout(resolve, retryDelay));
+      await new Promise((resolve) => setTimeout(resolve, retryDelay));
     }
   }
-  
+
   // If we got here, all retries failed
-  throw new Error(getErrorMessage(lastError, "Failed to fetch devices after multiple attempts"));
+  throw new Error(
+    getErrorMessage(
+      lastError,
+      "Failed to fetch devices after multiple attempts"
+    )
+  );
 }
 
 export async function addDevice(token, data) {
@@ -417,158 +438,206 @@ export async function submitDeviceData(token, data) {
   }
 }
 
-export async function fetchAllDeviceData(token, retryCount = 2, retryDelay = 2000) {
+export async function fetchAllDeviceData(
+  token,
+  retryCount = 2,
+  retryDelay = 2000
+) {
   let lastError;
-  
+
   for (let attempt = 0; attempt <= retryCount; attempt++) {
     try {
       // If this is a retry attempt, log it
       if (attempt > 0) {
-        console.log(`Retry attempt ${attempt}/${retryCount} for all device data...`);
+        console.log(
+          `Retry attempt ${attempt}/${retryCount} for all device data...`
+        );
       }
-      
+
       const res = await axios.get(`${API_BASE_URL}/device-data/all/`, {
         headers: authHeaders(token, null),
         timeout: 45000, // Increase timeout to 45 seconds
       });
-      
+
       return res.data;
     } catch (error) {
       lastError = error;
-      
+
       // Only retry on timeout or network errors, not on 4xx/5xx responses
-      const isTimeoutOrNetworkError = 
-        error.code === 'ECONNABORTED' || 
-        error.message.includes('timeout') ||
+      const isTimeoutOrNetworkError =
+        error.code === "ECONNABORTED" ||
+        error.message.includes("timeout") ||
         !error.response;
-      
+
       if (!isTimeoutOrNetworkError || attempt >= retryCount) {
         break; // Don't retry on non-timeout errors or if we've used all retries
       }
-      
+
       // Wait before retrying
-      await new Promise(resolve => setTimeout(resolve, retryDelay));
+      await new Promise((resolve) => setTimeout(resolve, retryDelay));
     }
   }
-  
+
   // If we got here, all retries failed
-  throw new Error(getErrorMessage(lastError, "Failed to fetch all device data after multiple attempts"));
+  throw new Error(
+    getErrorMessage(
+      lastError,
+      "Failed to fetch all device data after multiple attempts"
+    )
+  );
 }
 
-export async function fetchDeviceDataById(token, deviceId, retryCount = 2, retryDelay = 2000) {
+export async function fetchDeviceDataById(
+  token,
+  deviceId,
+  retryCount = 2,
+  retryDelay = 2000
+) {
   let lastError;
-  
+
   for (let attempt = 0; attempt <= retryCount; attempt++) {
     try {
       // If this is a retry attempt, log it
       if (attempt > 0) {
-        console.log(`Retry attempt ${attempt}/${retryCount} for device data by ID ${deviceId}...`);
+        console.log(
+          `Retry attempt ${attempt}/${retryCount} for device data by ID ${deviceId}...`
+        );
       }
-      
+
       const res = await axios.get(`${API_BASE_URL}/device-data/${deviceId}/`, {
         headers: authHeaders(token, null),
         timeout: 45000, // Increase timeout to 45 seconds
       });
-      
+
       return res.data;
     } catch (error) {
       lastError = error;
-      
+
       // Only retry on timeout or network errors, not on 4xx/5xx responses
-      const isTimeoutOrNetworkError = 
-        error.code === 'ECONNABORTED' || 
-        error.message.includes('timeout') ||
+      const isTimeoutOrNetworkError =
+        error.code === "ECONNABORTED" ||
+        error.message.includes("timeout") ||
         !error.response;
-      
+
       if (!isTimeoutOrNetworkError || attempt >= retryCount) {
         break; // Don't retry on non-timeout errors or if we've used all retries
       }
-      
+
       // Wait before retrying
-      await new Promise(resolve => setTimeout(resolve, retryDelay));
+      await new Promise((resolve) => setTimeout(resolve, retryDelay));
     }
   }
-  
+
   // If we got here, all retries failed
-  throw new Error(getErrorMessage(lastError, `Failed to fetch device data for ID ${deviceId} after multiple attempts`));
+  throw new Error(
+    getErrorMessage(
+      lastError,
+      `Failed to fetch device data for ID ${deviceId} after multiple attempts`
+    )
+  );
 }
 
 // ---------------- Notifications ----------------
 
-export async function fetchNotifications(token, retryCount = 2, retryDelay = 2000) {
+export async function fetchNotifications(
+  token,
+  retryCount = 2,
+  retryDelay = 2000
+) {
   let lastError;
-  
+
   for (let attempt = 0; attempt <= retryCount; attempt++) {
     try {
       // If this is a retry attempt, log it
       if (attempt > 0) {
-        console.log(`Retry attempt ${attempt}/${retryCount} for notifications...`);
+        console.log(
+          `Retry attempt ${attempt}/${retryCount} for notifications...`
+        );
       }
-      
+
       const res = await axios.get(`${API_BASE_URL}/notifications/`, {
         headers: authHeaders(token, null),
         timeout: 45000, // Increase timeout to 45 seconds
       });
-      
+
       return res.data;
     } catch (error) {
       lastError = error;
-      
+
       // Only retry on timeout or network errors, not on 4xx/5xx responses
-      const isTimeoutOrNetworkError = 
-        error.code === 'ECONNABORTED' || 
-        error.message.includes('timeout') ||
+      const isTimeoutOrNetworkError =
+        error.code === "ECONNABORTED" ||
+        error.message.includes("timeout") ||
         !error.response;
-      
+
       if (!isTimeoutOrNetworkError || attempt >= retryCount) {
         break; // Don't retry on non-timeout errors or if we've used all retries
       }
-      
+
       // Wait before retrying
-      await new Promise(resolve => setTimeout(resolve, retryDelay));
+      await new Promise((resolve) => setTimeout(resolve, retryDelay));
     }
   }
-  
+
   // If we got here, all retries failed
-  throw new Error(getErrorMessage(lastError, "Failed to fetch notifications after multiple attempts"));
+  throw new Error(
+    getErrorMessage(
+      lastError,
+      "Failed to fetch notifications after multiple attempts"
+    )
+  );
 }
 
-export async function fetchUnreadNotificationCount(token, retryCount = 2, retryDelay = 2000) {
+export async function fetchUnreadNotificationCount(
+  token,
+  retryCount = 2,
+  retryDelay = 2000
+) {
   let lastError;
-  
+
   for (let attempt = 0; attempt <= retryCount; attempt++) {
     try {
       // If this is a retry attempt, log it
       if (attempt > 0) {
-        console.log(`Retry attempt ${attempt}/${retryCount} for unread notification count...`);
+        console.log(
+          `Retry attempt ${attempt}/${retryCount} for unread notification count...`
+        );
       }
-      
-      const res = await axios.get(`${API_BASE_URL}/notifications/unread-count/`, {
-        headers: authHeaders(token, null),
-        timeout: 45000, // Increase timeout to 45 seconds
-      });
-      
+
+      const res = await axios.get(
+        `${API_BASE_URL}/notifications/unread-count/`,
+        {
+          headers: authHeaders(token, null),
+          timeout: 45000, // Increase timeout to 45 seconds
+        }
+      );
+
       return res.data;
     } catch (error) {
       lastError = error;
-      
+
       // Only retry on timeout or network errors, not on 4xx/5xx responses
-      const isTimeoutOrNetworkError = 
-        error.code === 'ECONNABORTED' || 
-        error.message.includes('timeout') ||
+      const isTimeoutOrNetworkError =
+        error.code === "ECONNABORTED" ||
+        error.message.includes("timeout") ||
         !error.response;
-      
+
       if (!isTimeoutOrNetworkError || attempt >= retryCount) {
         break; // Don't retry on non-timeout errors or if we've used all retries
       }
-      
+
       // Wait before retrying
-      await new Promise(resolve => setTimeout(resolve, retryDelay));
+      await new Promise((resolve) => setTimeout(resolve, retryDelay));
     }
   }
-  
+
   // If we got here, all retries failed
-  throw new Error(getErrorMessage(lastError, "Failed to fetch unread notification count after multiple attempts"));
+  throw new Error(
+    getErrorMessage(
+      lastError,
+      "Failed to fetch unread notification count after multiple attempts"
+    )
+  );
 }
 
 export async function markNotificationAsRead(token, notificationId) {
@@ -633,56 +702,73 @@ export async function registerPushToken(token, pushTokenData) {
 
 // ---------------- Analytics ----------------
 
-export async function fetchDeviceAnalytics(token, retryCount = 2, retryDelay = 2000) {
+export async function fetchDeviceAnalytics(
+  token,
+  retryCount = 2,
+  retryDelay = 2000
+) {
   let lastError;
-  
+
   for (let attempt = 0; attempt <= retryCount; attempt++) {
     try {
       // If this is a retry attempt, log it
       if (attempt > 0) {
-        console.log(`Retry attempt ${attempt}/${retryCount} for device analytics...`);
+        console.log(
+          `Retry attempt ${attempt}/${retryCount} for device analytics...`
+        );
       }
-      
+
       const res = await axios.get(`${API_BASE_URL}/device-analytics/`, {
         headers: authHeaders(token, null),
         timeout: 45000, // Increase timeout to 45 seconds
       });
-      
+
       return res.data;
     } catch (error) {
       lastError = error;
-      
+
       // Only retry on timeout or network errors, not on 4xx/5xx responses
-      const isTimeoutOrNetworkError = 
-        error.code === 'ECONNABORTED' || 
-        error.message.includes('timeout') ||
+      const isTimeoutOrNetworkError =
+        error.code === "ECONNABORTED" ||
+        error.message.includes("timeout") ||
         !error.response;
-      
+
       if (!isTimeoutOrNetworkError || attempt >= retryCount) {
         break; // Don't retry on non-timeout errors or if we've used all retries
       }
-      
+
       // Wait before retrying
-      await new Promise(resolve => setTimeout(resolve, retryDelay));
+      await new Promise((resolve) => setTimeout(resolve, retryDelay));
     }
   }
-  
+
   // If we got here, all retries failed
-  throw new Error(getErrorMessage(lastError, "Failed to fetch analytics after multiple attempts"));
+  throw new Error(
+    getErrorMessage(
+      lastError,
+      "Failed to fetch analytics after multiple attempts"
+    )
+  );
 }
 
 // ---------------- Real-time Device Status ----------------
 
-export async function fetchDeviceRealtimeStatus(token, retryCount = 2, retryDelay = 2000) {
+export async function fetchDeviceRealtimeStatus(
+  token,
+  retryCount = 2,
+  retryDelay = 2000
+) {
   let lastError;
-  
+
   for (let attempt = 0; attempt <= retryCount; attempt++) {
     try {
       // If this is a retry attempt, log it
       if (attempt > 0) {
-        console.log(`Retry attempt ${attempt}/${retryCount} for realtime status...`);
+        console.log(
+          `Retry attempt ${attempt}/${retryCount} for realtime status...`
+        );
       }
-      
+
       const res = await axios.get(
         `${API_BASE_URL}/device-analytics/realtime-status/`,
         {
@@ -690,40 +776,51 @@ export async function fetchDeviceRealtimeStatus(token, retryCount = 2, retryDela
           timeout: 45000, // Increase timeout to 45 seconds
         }
       );
-      
+
       return res.data;
     } catch (error) {
       lastError = error;
-      
+
       // Only retry on timeout or network errors, not on 4xx/5xx responses
-      const isTimeoutOrNetworkError = 
-        error.code === 'ECONNABORTED' || 
-        error.message.includes('timeout') ||
+      const isTimeoutOrNetworkError =
+        error.code === "ECONNABORTED" ||
+        error.message.includes("timeout") ||
         !error.response;
-      
+
       if (!isTimeoutOrNetworkError || attempt >= retryCount) {
         break; // Don't retry on non-timeout errors or if we've used all retries
       }
-      
+
       // Wait before retrying
-      await new Promise(resolve => setTimeout(resolve, retryDelay));
+      await new Promise((resolve) => setTimeout(resolve, retryDelay));
     }
   }
-  
+
   // If we got here, all retries failed
-  throw new Error(getErrorMessage(lastError, "Failed to fetch real-time device status after multiple attempts"));
+  throw new Error(
+    getErrorMessage(
+      lastError,
+      "Failed to fetch real-time device status after multiple attempts"
+    )
+  );
 }
 
-export async function fetchDeviceStatusSummary(token, retryCount = 2, retryDelay = 2000) {
+export async function fetchDeviceStatusSummary(
+  token,
+  retryCount = 2,
+  retryDelay = 2000
+) {
   let lastError;
-  
+
   for (let attempt = 0; attempt <= retryCount; attempt++) {
     try {
       // If this is a retry attempt, log it
       if (attempt > 0) {
-        console.log(`Retry attempt ${attempt}/${retryCount} for device status summary...`);
+        console.log(
+          `Retry attempt ${attempt}/${retryCount} for device status summary...`
+        );
       }
-      
+
       const res = await axios.get(
         `${API_BASE_URL}/device-analytics/status-summary/`,
         {
@@ -731,28 +828,33 @@ export async function fetchDeviceStatusSummary(token, retryCount = 2, retryDelay
           timeout: 45000, // Increase timeout to 45 seconds
         }
       );
-      
+
       return res.data;
     } catch (error) {
       lastError = error;
-      
+
       // Only retry on timeout or network errors, not on 4xx/5xx responses
-      const isTimeoutOrNetworkError = 
-        error.code === 'ECONNABORTED' || 
-        error.message.includes('timeout') ||
+      const isTimeoutOrNetworkError =
+        error.code === "ECONNABORTED" ||
+        error.message.includes("timeout") ||
         !error.response;
-      
+
       if (!isTimeoutOrNetworkError || attempt >= retryCount) {
         break; // Don't retry on non-timeout errors or if we've used all retries
       }
-      
+
       // Wait before retrying
-      await new Promise(resolve => setTimeout(resolve, retryDelay));
+      await new Promise((resolve) => setTimeout(resolve, retryDelay));
     }
   }
-  
+
   // If we got here, all retries failed
-  throw new Error(getErrorMessage(lastError, "Failed to fetch device status summary after multiple attempts"));
+  throw new Error(
+    getErrorMessage(
+      lastError,
+      "Failed to fetch device status summary after multiple attempts"
+    )
+  );
 }
 
 // ---------------- New Time-based Analytics ----------------
@@ -767,18 +869,27 @@ export async function fetchTimeBasedAnalytics(
   retryDelay = 2000
 ) {
   let lastError;
-  
+
   for (let attempt = 0; attempt <= retryCount; attempt++) {
     try {
       // If this is a retry attempt, log it
       if (attempt > 0) {
-        console.log(`Retry attempt ${attempt}/${retryCount} for time-based analytics...`);
+        console.log(
+          `Retry attempt ${attempt}/${retryCount} for time-based analytics...`
+        );
       }
-      
+
       const params = new URLSearchParams({ period });
       if (deviceId) params.append("device_id", deviceId);
-      if (startDate) params.append("start_date", startDate.toISOString());
-      if (endDate) params.append("end_date", endDate.toISOString());
+      if (startDate) {
+        const start =
+          startDate instanceof Date ? startDate : new Date(startDate);
+        params.append("start_date", start.toISOString());
+      }
+      if (endDate) {
+        const end = endDate instanceof Date ? endDate : new Date(endDate);
+        params.append("end_date", end.toISOString());
+      }
 
       const res = await axios.get(
         `${API_BASE_URL}/device-analytics/time-based/?${params.toString()}`,
@@ -787,28 +898,33 @@ export async function fetchTimeBasedAnalytics(
           timeout: 45000, // Increase timeout to 45 seconds
         }
       );
-      
+
       return res.data;
     } catch (error) {
       lastError = error;
-      
+
       // Only retry on timeout or network errors, not on 4xx/5xx responses
-      const isTimeoutOrNetworkError = 
-        error.code === 'ECONNABORTED' || 
-        error.message.includes('timeout') ||
+      const isTimeoutOrNetworkError =
+        error.code === "ECONNABORTED" ||
+        error.message.includes("timeout") ||
         !error.response;
-      
+
       if (!isTimeoutOrNetworkError || attempt >= retryCount) {
         break; // Don't retry on non-timeout errors or if we've used all retries
       }
-      
+
       // Wait before retrying
-      await new Promise(resolve => setTimeout(resolve, retryDelay));
+      await new Promise((resolve) => setTimeout(resolve, retryDelay));
     }
   }
-  
+
   // If we got here, all retries failed
-  throw new Error(getErrorMessage(lastError, "Failed to fetch time-based analytics after multiple attempts"));
+  throw new Error(
+    getErrorMessage(
+      lastError,
+      "Failed to fetch time-based analytics after multiple attempts"
+    )
+  );
 }
 
 // In your api.js file
@@ -872,56 +988,73 @@ export async function downloadAnalytics(
   }
 }
 
-export async function fetchSummaryAnalytics(token, retryCount = 2, retryDelay = 2000) {
+export async function fetchSummaryAnalytics(
+  token,
+  retryCount = 2,
+  retryDelay = 2000
+) {
   let lastError;
-  
+
   for (let attempt = 0; attempt <= retryCount; attempt++) {
     try {
       // If this is a retry attempt, log it
       if (attempt > 0) {
-        console.log(`Retry attempt ${attempt}/${retryCount} for summary analytics...`);
+        console.log(
+          `Retry attempt ${attempt}/${retryCount} for summary analytics...`
+        );
       }
-      
+
       const res = await axios.get(`${API_BASE_URL}/device-analytics/summary/`, {
         headers: authHeaders(token, null),
         timeout: 45000, // Increase timeout to 45 seconds
       });
-      
+
       return res.data;
     } catch (error) {
       lastError = error;
-      
+
       // Only retry on timeout or network errors, not on 4xx/5xx responses
-      const isTimeoutOrNetworkError = 
-        error.code === 'ECONNABORTED' || 
-        error.message.includes('timeout') ||
+      const isTimeoutOrNetworkError =
+        error.code === "ECONNABORTED" ||
+        error.message.includes("timeout") ||
         !error.response;
-      
+
       if (!isTimeoutOrNetworkError || attempt >= retryCount) {
         break; // Don't retry on non-timeout errors or if we've used all retries
       }
-      
+
       // Wait before retrying
-      await new Promise(resolve => setTimeout(resolve, retryDelay));
+      await new Promise((resolve) => setTimeout(resolve, retryDelay));
     }
   }
-  
+
   // If we got here, all retries failed
-  throw new Error(getErrorMessage(lastError, "Failed to fetch summary analytics after multiple attempts"));
+  throw new Error(
+    getErrorMessage(
+      lastError,
+      "Failed to fetch summary analytics after multiple attempts"
+    )
+  );
 }
 
 // ---------------- New Analytics Functions ----------------
 // Battery and Power Analytics
-export async function fetchBatteryUsageAnalytics(token, retryCount = 2, retryDelay = 2000) {
+export async function fetchBatteryUsageAnalytics(
+  token,
+  retryCount = 2,
+  retryDelay = 2000
+) {
   let lastError;
-  
+
   for (let attempt = 0; attempt <= retryCount; attempt++) {
     try {
       // If this is a retry attempt, log it
       if (attempt > 0) {
-        console.log(`Retry attempt ${attempt}/${retryCount} for battery usage analytics...`);
+        console.log(
+          `Retry attempt ${attempt}/${retryCount} for battery usage analytics...`
+        );
       }
-      
+
       const res = await axios.get(
         `${API_BASE_URL}/device-analytics/battery-usage/`,
         {
@@ -929,28 +1062,33 @@ export async function fetchBatteryUsageAnalytics(token, retryCount = 2, retryDel
           timeout: 45000, // Increase timeout to 45 seconds
         }
       );
-      
+
       return res.data;
     } catch (error) {
       lastError = error;
-      
+
       // Only retry on timeout or network errors, not on 4xx/5xx responses
-      const isTimeoutOrNetworkError = 
-        error.code === 'ECONNABORTED' || 
-        error.message.includes('timeout') ||
+      const isTimeoutOrNetworkError =
+        error.code === "ECONNABORTED" ||
+        error.message.includes("timeout") ||
         !error.response;
-      
+
       if (!isTimeoutOrNetworkError || attempt >= retryCount) {
         break; // Don't retry on non-timeout errors or if we've used all retries
       }
-      
+
       // Wait before retrying
-      await new Promise(resolve => setTimeout(resolve, retryDelay));
+      await new Promise((resolve) => setTimeout(resolve, retryDelay));
     }
   }
-  
+
   // If we got here, all retries failed
-  throw new Error(getErrorMessage(lastError, "Failed to fetch battery usage analytics after multiple attempts"));
+  throw new Error(
+    getErrorMessage(
+      lastError,
+      "Failed to fetch battery usage analytics after multiple attempts"
+    )
+  );
 }
 
 export async function fetchBatteryUsageTrends(
@@ -961,14 +1099,16 @@ export async function fetchBatteryUsageTrends(
   retryDelay = 2000
 ) {
   let lastError;
-  
+
   for (let attempt = 0; attempt <= retryCount; attempt++) {
     try {
       // If this is a retry attempt, log it
       if (attempt > 0) {
-        console.log(`Retry attempt ${attempt}/${retryCount} for battery usage trends...`);
+        console.log(
+          `Retry attempt ${attempt}/${retryCount} for battery usage trends...`
+        );
       }
-      
+
       const params = new URLSearchParams();
       if (deviceId) params.append("device_id", deviceId);
       params.append("days", days.toString());
@@ -980,28 +1120,33 @@ export async function fetchBatteryUsageTrends(
           timeout: 45000, // Increase timeout to 45 seconds
         }
       );
-      
+
       return res.data;
     } catch (error) {
       lastError = error;
-      
+
       // Only retry on timeout or network errors, not on 4xx/5xx responses
-      const isTimeoutOrNetworkError = 
-        error.code === 'ECONNABORTED' || 
-        error.message.includes('timeout') ||
+      const isTimeoutOrNetworkError =
+        error.code === "ECONNABORTED" ||
+        error.message.includes("timeout") ||
         !error.response;
-      
+
       if (!isTimeoutOrNetworkError || attempt >= retryCount) {
         break; // Don't retry on non-timeout errors or if we've used all retries
       }
-      
+
       // Wait before retrying
-      await new Promise(resolve => setTimeout(resolve, retryDelay));
+      await new Promise((resolve) => setTimeout(resolve, retryDelay));
     }
   }
-  
+
   // If we got here, all retries failed
-  throw new Error(getErrorMessage(lastError, "Failed to fetch battery usage trends after multiple attempts"));
+  throw new Error(
+    getErrorMessage(
+      lastError,
+      "Failed to fetch battery usage trends after multiple attempts"
+    )
+  );
 }
 
 // ---------------- Enhanced Download Functions ----------------
@@ -1262,16 +1407,22 @@ export async function updateDeviceStatus(token, statusData) {
   }
 }
 
-export async function fetchDeviceStatusDistribution(token, retryCount = 2, retryDelay = 2000) {
+export async function fetchDeviceStatusDistribution(
+  token,
+  retryCount = 2,
+  retryDelay = 2000
+) {
   let lastError;
-  
+
   for (let attempt = 0; attempt <= retryCount; attempt++) {
     try {
       // If this is a retry attempt, log it
       if (attempt > 0) {
-        console.log(`Retry attempt ${attempt}/${retryCount} for device status distribution...`);
+        console.log(
+          `Retry attempt ${attempt}/${retryCount} for device status distribution...`
+        );
       }
-      
+
       const res = await axios.get(
         `${API_BASE_URL}/device-analytics/status-distribution/`,
         {
@@ -1279,28 +1430,33 @@ export async function fetchDeviceStatusDistribution(token, retryCount = 2, retry
           timeout: 45000, // Increase timeout to 45 seconds
         }
       );
-      
+
       return res.data;
     } catch (error) {
       lastError = error;
-      
+
       // Only retry on timeout or network errors, not on 4xx/5xx responses
-      const isTimeoutOrNetworkError = 
-        error.code === 'ECONNABORTED' || 
-        error.message.includes('timeout') ||
+      const isTimeoutOrNetworkError =
+        error.code === "ECONNABORTED" ||
+        error.message.includes("timeout") ||
         !error.response;
-      
+
       if (!isTimeoutOrNetworkError || attempt >= retryCount) {
         break; // Don't retry on non-timeout errors or if we've used all retries
       }
-      
+
       // Wait before retrying
-      await new Promise(resolve => setTimeout(resolve, retryDelay));
+      await new Promise((resolve) => setTimeout(resolve, retryDelay));
     }
   }
-  
+
   // If we got here, all retries failed
-  throw new Error(getErrorMessage(lastError, "Failed to fetch device status distribution after multiple attempts"));
+  throw new Error(
+    getErrorMessage(
+      lastError,
+      "Failed to fetch device status distribution after multiple attempts"
+    )
+  );
 }
 
 // ---------------- Utility Functions ----------------
@@ -1433,48 +1589,60 @@ export default {
 
 // ---------------- Admin Dashboard ----------------
 
-export async function fetchDashboardStats(token, retryCount = 2, retryDelay = 2000) {
+export async function fetchDashboardStats(
+  token,
+  retryCount = 2,
+  retryDelay = 2000
+) {
   let lastError;
-  
+
   for (let attempt = 0; attempt <= retryCount; attempt++) {
     try {
       // If this is a retry attempt, log it
       if (attempt > 0) {
-        console.log(`Retry attempt ${attempt}/${retryCount} for dashboard stats...`);
+        console.log(
+          `Retry attempt ${attempt}/${retryCount} for dashboard stats...`
+        );
       }
-      
+
       const res = await axios.get(`${API_BASE_URL}/admin/dashboard-stats/`, {
         headers: authHeaders(token),
         timeout: 45000, // Increase timeout to 45 seconds
       });
-      
+
       return {
         success: true,
         data: res.data,
       };
     } catch (error) {
       lastError = error;
-      
+
       // Only retry on timeout or network errors, not on 4xx/5xx responses
-      const isTimeoutOrNetworkError = 
-        error.code === 'ECONNABORTED' || 
-        error.message.includes('timeout') ||
+      const isTimeoutOrNetworkError =
+        error.code === "ECONNABORTED" ||
+        error.message.includes("timeout") ||
         !error.response;
-      
+
       if (!isTimeoutOrNetworkError || attempt >= retryCount) {
         break; // Don't retry on non-timeout errors or if we've used all retries
       }
-      
+
       // Wait before retrying
-      await new Promise(resolve => setTimeout(resolve, retryDelay));
+      await new Promise((resolve) => setTimeout(resolve, retryDelay));
     }
   }
-  
+
   // If we got here, all retries failed
-  console.error("Error fetching dashboard stats after multiple attempts:", lastError);
+  console.error(
+    "Error fetching dashboard stats after multiple attempts:",
+    lastError
+  );
   return {
     success: false,
-    error: getErrorMessage(lastError, "Failed to fetch dashboard stats after multiple attempts"),
+    error: getErrorMessage(
+      lastError,
+      "Failed to fetch dashboard stats after multiple attempts"
+    ),
     data: {
       totalDevices: 0,
       activeDevices: 0,

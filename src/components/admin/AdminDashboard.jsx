@@ -43,6 +43,8 @@ import LandingPageTop, {
 import DeviceStatusDistribution from "../DeviceStatusDistribution";
 import DeviceDetailsModal from "../Devices/DeviceDetailsModal";
 
+import DevicesList from "../Landingpage/DeviceList";
+
 const AdminDashboard = () => {
   // Use theme context
   const { themeColors } = useTheme();
@@ -60,85 +62,78 @@ const AdminDashboard = () => {
   });
 
   // Handler for device card click
+  const [showAllDevices, setShowAllDevices] = useState(false);
   const handleDeviceCardClick = (deviceType) => {
-    // Prepare modal data based on device type
-    let title = "";
-    let details = {};
-
-    switch (deviceType) {
-      case "all":
-        title = "All Devices Summary";
-        details = {
-          "Total Devices": dashboardStats.totalDevices || 0,
-          "Active Devices": dashboardStats.activeDevices || 0,
-          "Offline Devices": dashboardStats.offlineDevices || 0,
-          "No Power Devices": dashboardStats.noPowerDevices || 0,
-          "System Health": `${dashboardStats.systemHealthPercentage || 0}%`,
-          "System Status": dashboardStats.systemHealthStatus || "Unknown",
-        };
-        break;
-      case "active":
-        title = "Active Devices Summary";
-        details = {
-          "Active Devices": dashboardStats.activeDevices || 0,
-          "Percentage of Total": `${
-            dashboardStats.activeDevices
-              ? (
-                  (dashboardStats.activeDevices / dashboardStats.totalDevices) *
-                  100
-                ).toFixed(1)
-              : 0
-          }%`,
-          "With Battery Alerts": dashboardStats.activeBatteryAlerts || 0,
-          "With Tissue Alerts": dashboardStats.activeTissueAlerts || 0,
-        };
-        break;
-      case "offline":
-        title = "Offline Devices Summary";
-        details = {
-          "Offline Devices": dashboardStats.offlineDevices || 0,
-          "Percentage of Total": `${
-            dashboardStats.offlineDevices
-              ? (
-                  (dashboardStats.offlineDevices /
-                    dashboardStats.totalDevices) *
-                  100
-                ).toFixed(1)
-              : 0
-          }%`,
-          "Last Seen": "Various times",
-          "Most Common Issue": "Connection lost",
-        };
-        break;
-      case "no-power":
-        title = "No Power Devices Summary";
-        details = {
-          "No Power Devices": dashboardStats.noPowerDevices || 0,
-          "Percentage of Total": `${
-            dashboardStats.noPowerDevices
-              ? (
-                  (dashboardStats.noPowerDevices /
-                    dashboardStats.totalDevices) *
-                  100
-                ).toFixed(1)
-              : 0
-          }%`,
-          "Battery Off Devices": dashboardStats.batteryOffDevices || 0,
-          "Critical Battery Devices": dashboardStats.criticalDevices || 0,
-        };
-        break;
-      default:
-        title = "Device Summary";
-        details = {
-          "Total Devices": dashboardStats.totalDevices || 0,
-        };
+    if (deviceType === "all") {
+      setShowAllDevices(true);
+    } else {
+      // fallback to previous modal logic for other types if needed
+      let title = "";
+      let details = {};
+      switch (deviceType) {
+        case "active":
+          title = "Active Devices Summary";
+          details = {
+            "Active Devices": dashboardStats.activeDevices || 0,
+            "Percentage of Total": `${
+              dashboardStats.activeDevices
+                ? (
+                    (dashboardStats.activeDevices /
+                      dashboardStats.totalDevices) *
+                    100
+                  ).toFixed(1)
+                : 0
+            }%`,
+            "With Battery Alerts": dashboardStats.activeBatteryAlerts || 0,
+            "With Tissue Alerts": dashboardStats.activeTissueAlerts || 0,
+          };
+          break;
+        case "offline":
+          title = "Offline Devices Summary";
+          details = {
+            "Offline Devices": dashboardStats.offlineDevices || 0,
+            "Percentage of Total": `${
+              dashboardStats.offlineDevices
+                ? (
+                    (dashboardStats.offlineDevices /
+                      dashboardStats.totalDevices) *
+                    100
+                  ).toFixed(1)
+                : 0
+            }%`,
+            "Last Seen": "Various times",
+            "Most Common Issue": "Connection lost",
+          };
+          break;
+        case "no-power":
+          title = "No Power Devices Summary";
+          details = {
+            "No Power Devices": dashboardStats.noPowerDevices || 0,
+            "Percentage of Total": `${
+              dashboardStats.noPowerDevices
+                ? (
+                    (dashboardStats.noPowerDevices /
+                      dashboardStats.totalDevices) *
+                    100
+                  ).toFixed(1)
+                : 0
+            }%`,
+            "Battery Off Devices": dashboardStats.batteryOffDevices || 0,
+            "Critical Battery Devices": dashboardStats.criticalDevices || 0,
+          };
+          break;
+        default:
+          title = "Device Summary";
+          details = {
+            "Total Devices": dashboardStats.totalDevices || 0,
+          };
+      }
+      setDeviceModalData({
+        title,
+        details,
+      });
+      setDeviceModalOpen(true);
     }
-
-    setDeviceModalData({
-      title,
-      details,
-    });
-    setDeviceModalOpen(true);
   };
 
   // Use the device store
@@ -618,6 +613,7 @@ const AdminDashboard = () => {
     return () => clearInterval(interval);
   }, [handleRefresh]);
 
+  // No early return! Render modal conditionally below main return.
   // Theme-aware StatCard
   const StatCard = ({
     title,
@@ -1089,7 +1085,6 @@ const AdminDashboard = () => {
     );
   };
 
-  
   const SummaryCards = () => {
     const summaryData = [
       {
@@ -1205,223 +1200,252 @@ const AdminDashboard = () => {
   // Remove the blocking loading spinner entirely
 
   return (
-    <div
-      className="space-y-6 p-6 min-h-screen"
-      style={{
-        background: themeColors.background,
-        color: themeColors.text,
-        transition: "background 0.3s, color 0.3s",
-      }}
-    >
-      {/* Device Details Modal */}
-      <DeviceDetailsModal
-        open={deviceModalOpen}
-        onClose={() => setDeviceModalOpen(false)}
-        title={deviceModalData.title}
-        details={deviceModalData.details}
-      />
-
-      {/* No blocking loading spinner - background refresh only */}
-
-      {/* Landing Page Top Component - matches mobile app */}
-      <LandingPageTop
-        stats={dashboardStats}
-        realtimeStatus={realtimeStatusCache || realtimeStatus}
-        onRefresh={handleRefresh}
-        isLoading={false} // Never show loading spinner
-        onDeviceCardClick={handleDeviceCardClick}
-      />
-
-      {/* Enhanced Alert Type Selector - toggle button style for Tissue and Battery Alerts */}
-      <div className="flex justify-center mb-6">
-        <div
-          className="rounded-2xl p-4 shadow-lg border backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
-          style={{
-            background:
-              selectedAlertType === "tissue"
-                ? themeColors.primary + "11"
-                : themeColors.warning + "11",
-            borderColor: themeColors.border,
-            transition: "background 0.3s, border-color 0.3s",
-          }}
-        >
-          <div className="flex items-center justify-center">
-            <span
-              className="font-bold text-sm mr-3"
-              style={{
-                color:
-                  selectedAlertType === "tissue"
-                    ? themeColors.primary
-                    : themeColors.muted,
-              }}
-            >
-              Tissue
-            </span>
+    <React.Fragment>
+      {/* Show all device cards overlay, but do not return early! */}
+      {showAllDevices && (
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-60 flex flex-col items-center justify-center overflow-y-auto">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-5xl w-full mx-auto p-8 relative">
             <button
-              type="button"
-              aria-label="Toggle alert type"
-              className="relative w-16 h-8 rounded-full focus:outline-none focus:ring-2 transition-colors duration-300 mx-2 border"
-              style={{
-                background:
-                  selectedAlertType === "tissue"
-                    ? themeColors.primary + "22"
-                    : themeColors.warning + "22",
-                border: `1px solid ${themeColors.border}`,
-                boxShadow: `0 2px 8px ${themeColors.shadow}22`,
-                transition: "background 0.3s, border 0.3s",
-              }}
-              onClick={() =>
-                setSelectedAlertType(
-                  selectedAlertType === "tissue" ? "battery" : "tissue"
-                )
-              }
+              className="absolute top-4 right-4 text-2xl font-bold text-gray-700 dark:text-gray-200 hover:text-red-500 transition"
+              onClick={() => setShowAllDevices(false)}
+              aria-label="Close"
             >
-              <span
-                className="absolute top-1 left-1 w-6 h-6 rounded-full flex items-center justify-center transition-all duration-300 shadow-md"
-                style={{
-                  transform:
-                    selectedAlertType === "tissue"
-                      ? "translateX(0)"
-                      : "translateX(32px)",
-                  background:
-                    selectedAlertType === "tissue"
-                      ? themeColors.primary
-                      : themeColors.warning,
-                  color: themeColors.surface,
-                }}
-              >
-                {selectedAlertType === "tissue" ? (
-                  <Droplets size={18} className="text-white" />
-                ) : (
-                  <Battery size={18} className="text-white" />
-                )}
-              </span>
+              ×
             </button>
-            <span
-              className="font-bold text-sm ml-3"
-              style={{
-                color:
-                  selectedAlertType === "battery"
-                    ? themeColors.warning
-                    : themeColors.muted,
-              }}
-            >
-              Battery
-            </span>
+            <h2 className="text-2xl font-bold mb-6 text-center text-gray-900 dark:text-white">
+              All Devices
+            </h2>
+            <DevicesList
+              analytics={analytics}
+              realtimeStatus={realtimeStatus}
+              themeColors={themeColors}
+              summaryData={summaryData}
+              devices={devices}
+            />
           </div>
         </div>
-      </div>
-
-      {/* Summary Cards Component - matches mobile app */}
-      <SummaryCards
-        dashboardData={dashboardDataCache || dashboardData}
-        realtimeStatus={realtimeStatusCache || realtimeStatus}
-        selectedAlertType={selectedAlertType}
-        isLoading={false}
-        onAlertPress={(alertType) => {
-          let title = "";
-          let details = {};
-          setDeviceModalData({ title, details });
-          setDeviceModalOpen(true);
+      )}
+      <div
+        className="space-y-6 p-6 min-h-screen"
+        style={{
+          background: themeColors.background,
+          color: themeColors.text,
+          transition: "background 0.3s, color 0.3s",
         }}
-        themeColors={themeColors}
-      />
-
-      {/* Charts Section with Recent Alerts on the right */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Alert Distribution Chart */}
-        <DeviceStatusDistribution
-          realtimeStatus={realtimeStatusCache || realtimeStatus}
-          selectedAlertType={selectedAlertType}
-          onRefresh={handleRefresh}
-          isLoading={false}
+      >
+        {/* Device Details Modal */}
+        <DeviceDetailsModal
+          open={deviceModalOpen}
+          onClose={() => setDeviceModalOpen(false)}
+          title={deviceModalData.title}
+          details={deviceModalData.details}
         />
 
-        {/* Recent Alerts Section (now in right column) */}
-        <div
-          className="rounded-3xl p-6 shadow-lg border flex flex-col transition-all duration-300"
-          style={{
-            background: themeColors.card,
-            borderColor: themeColors.border,
-            boxShadow: `0 4px 12px ${themeColors.shadow}20`,
-            transition: "background 0.3s, border-color 0.3s",
-          }}
-        >
-          <div className="flex justify-between items-center mb-6">
-            <h3
-              className="text-lg font-bold"
-              style={{ color: themeColors.heading }}
-            >
-              Recent Alerts
-            </h3>
-            <Link
-              to="/admin/alerts"
-              className="font-medium text-sm"
-              style={{ color: themeColors.primary }}
-            >
-              View All
-            </Link>
-          </div>
+        {/* No blocking loading spinner - background refresh only */}
 
-          <div className="space-y-3 flex-1">
-            {(dashboardDataCache || dashboardData).recentAlerts
-              ?.slice(0, 5)
-              .map((alert) => (
-                <div
-                  key={alert.id}
-                  className="flex items-center justify-between p-4 rounded-2xl transition-all duration-300 hover:shadow-md"
+        {/* Landing Page Top Component - matches mobile app */}
+        <LandingPageTop
+          stats={dashboardStats}
+          realtimeStatus={realtimeStatusCache || realtimeStatus}
+          onRefresh={handleRefresh}
+          isLoading={false} // Never show loading spinner
+          onDeviceCardClick={handleDeviceCardClick}
+        />
+
+        {/* Enhanced Alert Type Selector - toggle button style for Tissue and Battery Alerts */}
+        <div className="flex justify-center mb-6">
+          <div
+            className="rounded-2xl p-4 shadow-lg border backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+            style={{
+              background:
+                selectedAlertType === "tissue"
+                  ? themeColors.primary + "11"
+                  : themeColors.warning + "11",
+              borderColor: themeColors.border,
+              transition: "background 0.3s, border-color 0.3s",
+            }}
+          >
+            <div className="flex items-center justify-center">
+              <span
+                className="font-bold text-sm mr-3"
+                style={{
+                  color:
+                    selectedAlertType === "tissue"
+                      ? themeColors.primary
+                      : themeColors.muted,
+                }}
+              >
+                Tissue
+              </span>
+              <button
+                type="button"
+                aria-label="Toggle alert type"
+                className="relative w-16 h-8 rounded-full focus:outline-none focus:ring-2 transition-colors duration-300 mx-2 border"
+                style={{
+                  background:
+                    selectedAlertType === "tissue"
+                      ? themeColors.primary + "22"
+                      : themeColors.warning + "22",
+                  border: `1px solid ${themeColors.border}`,
+                  boxShadow: `0 2px 8px ${themeColors.shadow}22`,
+                  transition: "background 0.3s, border 0.3s",
+                }}
+                onClick={() =>
+                  setSelectedAlertType(
+                    selectedAlertType === "tissue" ? "battery" : "tissue"
+                  )
+                }
+              >
+                <span
+                  className="absolute top-1 left-1 w-6 h-6 rounded-full flex items-center justify-center transition-all duration-300 shadow-md"
                   style={{
-                    background: themeColors.surface,
-                    borderRadius: 18,
-                    cursor: "pointer",
-                    boxShadow: `0 2px 8px ${themeColors.shadow}10`,
+                    transform:
+                      selectedAlertType === "tissue"
+                        ? "translateX(0)"
+                        : "translateX(32px)",
+                    background:
+                      selectedAlertType === "tissue"
+                        ? themeColors.primary
+                        : themeColors.warning,
+                    color: themeColors.surface,
                   }}
                 >
-                  <div className="flex items-center space-x-3">
-                    <div
-                      className="w-3 h-3 rounded-full"
-                      style={{
-                        background:
-                          alert.type === "error"
-                            ? themeColors.danger
-                            : alert.type === "warning"
-                            ? themeColors.warning
-                            : themeColors.primary,
-                      }}
-                    />
-                    <div>
-                      <div
-                        className="font-medium"
-                        style={{ color: themeColors.heading }}
-                      >
-                        {alert.device_name}
-                      </div>
-                      <div
-                        className="text-sm"
-                        style={{ color: themeColors.muted }}
-                      >
-                        {alert.message}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-sm" style={{ color: themeColors.muted }}>
-                    {alert.timestamp}
-                  </div>
-                </div>
-              )) || (
-              <div
-                className="text-center py-8"
-                style={{ color: themeColors.muted }}
+                  {selectedAlertType === "tissue" ? (
+                    <Droplets size={18} className="text-white" />
+                  ) : (
+                    <Battery size={18} className="text-white" />
+                  )}
+                </span>
+              </button>
+              <span
+                className="font-bold text-sm ml-3"
+                style={{
+                  color:
+                    selectedAlertType === "battery"
+                      ? themeColors.warning
+                      : themeColors.muted,
+                }}
               >
-                No recent alerts
-              </div>
-            )}
+                Battery
+              </span>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Quick Actions removed as requested */}
-    </div>
+        {/* Summary Cards Component - matches mobile app */}
+        <SummaryCards
+          dashboardData={dashboardDataCache || dashboardData}
+          realtimeStatus={realtimeStatusCache || realtimeStatus}
+          selectedAlertType={selectedAlertType}
+          isLoading={false}
+          onAlertPress={(alertType) => {
+            let title = "";
+            let details = {};
+            setDeviceModalData({ title, details });
+            setDeviceModalOpen(true);
+          }}
+          themeColors={themeColors}
+        />
+
+        {/* Charts Section with Recent Alerts on the right */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Alert Distribution Chart */}
+          <DeviceStatusDistribution
+            realtimeStatus={realtimeStatusCache || realtimeStatus}
+            selectedAlertType={selectedAlertType}
+            onRefresh={handleRefresh}
+            isLoading={false}
+          />
+
+          {/* Recent Alerts Section (now in right column) */}
+          <div
+            className="rounded-3xl p-6 shadow-lg border flex flex-col transition-all duration-300"
+            style={{
+              background: themeColors.card,
+              borderColor: themeColors.border,
+              boxShadow: `0 4px 12px ${themeColors.shadow}20`,
+              transition: "background 0.3s, border-color 0.3s",
+            }}
+          >
+            <div className="flex justify-between items-center mb-6">
+              <h3
+                className="text-lg font-bold"
+                style={{ color: themeColors.heading }}
+              >
+                Recent Alerts
+              </h3>
+              <Link
+                to="/admin/alerts"
+                className="font-medium text-sm"
+                style={{ color: themeColors.primary }}
+              >
+                View All
+              </Link>
+            </div>
+
+            <div className="space-y-3 flex-1">
+              {(dashboardDataCache || dashboardData).recentAlerts
+                ?.slice(0, 5)
+                .map((alert) => (
+                  <div
+                    key={alert.id}
+                    className="flex items-center justify-between p-4 rounded-2xl transition-all duration-300 hover:shadow-md"
+                    style={{
+                      background: themeColors.surface,
+                      borderRadius: 18,
+                      cursor: "pointer",
+                      boxShadow: `0 2px 8px ${themeColors.shadow}10`,
+                    }}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{
+                          background:
+                            alert.type === "error"
+                              ? themeColors.danger
+                              : alert.type === "warning"
+                              ? themeColors.warning
+                              : themeColors.primary,
+                        }}
+                      />
+                      <div>
+                        <div
+                          className="font-medium"
+                          style={{ color: themeColors.heading }}
+                        >
+                          {alert.device_name}
+                        </div>
+                        <div
+                          className="text-sm"
+                          style={{ color: themeColors.muted }}
+                        >
+                          {alert.message}
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      className="text-sm"
+                      style={{ color: themeColors.muted }}
+                    >
+                      {alert.timestamp}
+                    </div>
+                  </div>
+                )) || (
+                <div
+                  className="text-center py-8"
+                  style={{ color: themeColors.muted }}
+                >
+                  No recent alerts
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Actions removed as requested */}
+      </div>
+    </React.Fragment>
   );
 };
 

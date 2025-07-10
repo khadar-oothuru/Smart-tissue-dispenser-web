@@ -25,7 +25,7 @@ import UserManagement from "./components/admin/UserManagement";
 
 // Page Components
 import Devices from "./components/Devices";
-import Analytics from "./components/Analytics";
+import Analytics from "./components/AnalyticsPages/Analytics"
 // import Reports from "./components/Reports";
 import Settings from "./components/Settings";
 import DeviceSummaryPage from "./components/Devices/DeviceSummaryPage";

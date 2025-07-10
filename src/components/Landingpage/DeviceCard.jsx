@@ -1,153 +1,29 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { 
-  Wifi, 
-  MapPin, 
-  Clock, 
-  ChevronRight, 
-  AlertTriangle,
-  Activity,
-  Signal,
-  CheckCircle,
-  XCircle,
-  Zap,
-  AlertCircle
-} from "lucide-react";
+  IoLocationOutline, 
+  IoTimeOutline, 
+  IoChevronForward,
+  IoWifiOutline,
+  IoAlertCircleOutline,
+  IoCheckmarkCircleOutline,
+  IoWarningOutline,
+  IoCloseCircleOutline
+} from "react-icons/io5";
+import { MdRouter } from "react-icons/md";
+import {useTheme } from "../../hooks/useThemeContext"
+import { getDeviceStatusConfig } from "../../utils/deviceStatusConfig";
 
-// Mock theme context (replace with your actual theme context)
-const useThemeContext = () => {
-  const [isDark, setIsDark] = useState(false);
-  
-  const themeColors = {
-    surface: isDark ? "#1a1a1a" : "#ffffff",
-    heading: isDark ? "#ffffff" : "#000000",
-    text: isDark ? "#e0e0e0" : "#333333",
-    border: isDark ? "#333333" : "#e0e0e0",
-    primary: "#007AFF",
-    background: isDark ? "#0a0a0a" : "#f5f5f5",
-    inputbg: isDark ? "#2a2a2a" : "#f8f9fa",
-  };
-  
-  return { themeColors, isDark, setIsDark };
-};
-
-// Mock router (replace with your actual router)
-const useRouter = () => {
-  return {
-    push: ({ pathname, params }) => {
-      console.log("Navigation:", pathname, params);
-      alert(`Navigating to ${pathname} with device ID: ${params.deviceId}`);
-    }
-  };
-};
-
-// Device status configuration utility
-const getDeviceStatusConfig = (status, isActive, isDark) => {
-  const normalizedStatus = (status || "").toLowerCase();
-  
-  const configs = {
-    tamper: {
-      color: "#FF3B30",
-      text: "Tamper",
-      icon: "alert-triangle",
-      bgLight: "#FDF2F2",
-      bgDark: "#FF3B3020",
-      gradient: ["#FF3B30", "#FF6B6B"]
-    },
-    empty: {
-      color: "#FF9500",
-      text: "Empty",
-      icon: "alert-circle",
-      bgLight: "#FFF4E6",
-      bgDark: "#FF950020",
-      gradient: ["#FF9500", "#FFB84D"]
-    },
-    low: {
-      color: "#FFCC00",
-      text: "Low",
-      icon: "alert-triangle",
-      bgLight: "#FFFBF0",
-      bgDark: "#FFCC0020",
-      gradient: ["#FFCC00", "#FFD700"]
-    },
-    full: {
-      color: "#34C759",
-      text: "Full",
-      icon: "check-circle",
-      bgLight: "#E8F5E8",
-      bgDark: "#34C75920",
-      gradient: ["#34C759", "#5ED760"]
-    },
-    offline: {
-      color: "#8E8E93",
-      text: "Offline",
-      icon: "x-circle",
-      bgLight: "#F2F2F7",
-      bgDark: "#8E8E9320",
-      gradient: ["#8E8E93", "#AEAEB2"]
-    },
-    active: {
-      color: "#007AFF",
-      text: "Active",
-      icon: "check-circle",
-      bgLight: "#E8F4FD",
-      bgDark: "#007AFF20",
-      gradient: ["#007AFF", "#5AC8FA"]
-    },
-    unknown: {
-      color: "#8E8E93",
-      text: "Unknown",
-      icon: "alert-circle",
-      bgLight: "#F2F2F7",
-      bgDark: "#8E8E9320",
-      gradient: ["#8E8E93", "#AEAEB2"]
-    }
-  };
-
-  // Status mapping logic
-  if (normalizedStatus === "tamper") return configs.tamper;
-  if (normalizedStatus === "empty") return configs.empty;
-  if (normalizedStatus === "low") return configs.low;
-  if (normalizedStatus === "full") return configs.full;
-  if (["offline", "disconnected", "inactive"].includes(normalizedStatus)) return configs.offline;
-  if (["normal", "active", "online"].includes(normalizedStatus)) return configs.active;
-  
-  return configs.unknown;
-};
-
-// Icon component mapping
-const getStatusIcon = (iconName, size = 16, color = "#000") => {
-  const iconMap = {
-    "alert-triangle": AlertTriangle,
-    "alert-circle": AlertCircle,
-    "check-circle": CheckCircle,
-    "x-circle": XCircle,
-  };
-  
-  const IconComponent = iconMap[iconName] || AlertCircle;
-  return <IconComponent size={size} color={color} />;
-};
-
-const DeviceCard = ({ device, index = 0, tissueOnly = false }) => {
-  const { themeColors, isDark } = useThemeContext();
-  const router = useRouter();
-  const [isVisible, setIsVisible] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
+export default function DeviceCard({ device, index = 0, tissueOnly = false }) {
+  const { themeColors, isDark } = useTheme();
+  const navigate = useNavigate();
   const cardRef = useRef(null);
-
-  // Animation on mount
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsVisible(true);
-    }, index * 50);
-
-    return () => clearTimeout(timer);
-  }, [index]);
+  const [isAnimated, setIsAnimated] = useState(false);
 
   // Navigation handler
   const handleCardPress = () => {
-    router.push({
-      pathname: "/device-details",
-      params: {
+    navigate("/device-details", {
+      state: {
         deviceId: device.device_id || device.id,
         deviceName:
           device.device_name ||
@@ -163,6 +39,14 @@ const DeviceCard = ({ device, index = 0, tissueOnly = false }) => {
       },
     });
   };
+
+  // Animation on mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsAnimated(true);
+    }, index * 50);
+    return () => clearTimeout(timer);
+  }, [index]);
 
   // Get status configuration
   let statusConfig;
@@ -191,39 +75,23 @@ const DeviceCard = ({ device, index = 0, tissueOnly = false }) => {
     );
   }
 
-  // Navigation function for admin device details
-  const handleViewDetails = () => {
-    try {
-      router.push({
-        pathname: "/device-details",
-        params: {
-          deviceId: device.device_id,
-          deviceName:
-            device.device_name || device.name || `Device ${device.device_id}`,
-          deviceStatus: device.current_status || "unknown",
-          isActive: String(device.is_active),
-          room: device.room_number || device.room || "Unknown",
-          floor:
-            device.floor_number !== undefined
-              ? device.floor_number.toString()
-              : device.floor || "N/A",
-        },
-      });
-    } catch (error) {
-      // Fallback: show alert with device info
-      alert(
-        `Admin Device Details\n\nDevice: ${
-          device.device_name || device.name || `Device ${device.device_id}`
-        }\nStatus: ${device.current_status || "Unknown"}\nRoom: ${
-          device.room_number || device.room || "Unknown"
-        }\nFloor: ${
-          device.floor_number !== undefined
-            ? device.floor_number
-            : device.floor || "N/A"
-        }`
-      );
+  // Get icon component based on status
+  const getStatusIcon = () => {
+    switch (statusConfig.icon) {
+      case "alert-circle-outline":
+        return IoAlertCircleOutline;
+      case "checkmark-circle-outline":
+        return IoCheckmarkCircleOutline;
+      case "warning-outline":
+        return IoWarningOutline;
+      case "close-circle-outline":
+        return IoCloseCircleOutline;
+      default:
+        return IoWifiOutline;
     }
   };
+
+  const StatusIcon = getStatusIcon();
 
   const lastAlertTime = device.last_alert_time
     ? new Date(device.last_alert_time).toLocaleString("en-US", {
@@ -243,69 +111,55 @@ const DeviceCard = ({ device, index = 0, tissueOnly = false }) => {
   return (
     <div
       ref={cardRef}
-      className={`
-        mx-4 mb-4 transition-all duration-500 ease-out
-        ${isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'}
-        ${isHovered ? 'scale-105' : ''}
-      `}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      className={`transform transition-all duration-400 ease-out mx-4 mb-4 ${
+        isAnimated ? "opacity-100 scale-100" : "opacity-0 scale-95"
+      }`}
+      style={{ transitionDelay: `${index * 50}ms` }}
     >
       <div
+        onClick={handleCardPress}
         className={`
-          rounded-3xl overflow-hidden cursor-pointer transition-all duration-300
-          ${isDark ? 'shadow-xl shadow-black/30' : 'shadow-lg shadow-black/8'}
-          border border-opacity-30 border-l-4
-          ${isHovered ? 'shadow-2xl' : ''}
+          relative overflow-hidden rounded-2xl cursor-pointer
+          transition-all duration-300 hover:scale-[1.02] hover:shadow-lg
+          ${isDark ? "bg-gray-800" : "bg-white"}
+          border border-opacity-30 shadow-md
+          ${isDark ? "shadow-black/30" : "shadow-gray-200/80"}
         `}
         style={{
-          backgroundColor: themeColors.surface,
           borderColor: statusConfig.color + "30",
+          borderLeftWidth: "4px",
           borderLeftColor: statusConfig.color,
         }}
-        onClick={handleCardPress}
       >
         {/* Status Gradient Bar */}
         <div
           className="h-1 w-full"
           style={{
-            background: `linear-gradient(to right, ${statusConfig.gradient[0]}, ${statusConfig.gradient[1]})`
+            background: `linear-gradient(to right, ${statusConfig.gradient[0]}, ${statusConfig.gradient[1]})`,
           }}
         />
 
         {/* Header Section */}
         <div className="flex justify-between items-center p-4 pb-3">
           <div className="flex items-center flex-1">
-            {/* Icon Container */}
             <div
               className="w-11 h-11 rounded-xl flex items-center justify-center mr-3 relative"
               style={{
-                backgroundColor: isDark
-                  ? statusConfig.bgDark
-                  : statusConfig.bgLight,
+                backgroundColor: isDark ? statusConfig.bgDark : statusConfig.bgLight,
               }}
             >
-              <Wifi size={24} color={statusConfig.color} />
+              <MdRouter size={24} style={{ color: statusConfig.color }} />
             </div>
 
-            {/* Device Info */}
             <div className="flex-1">
-              <h3
-                className="text-lg font-bold mb-1"
-                style={{ color: themeColors.heading }}
-              >
-                {device.device_name ||
-                  device.name ||
-                  `Device ${device.device_id}`}
+              <h3 className={`text-lg font-bold mb-1 ${isDark ? "text-white" : "text-gray-900"}`}>
+                {device.device_name || device.name || `Device ${device.device_id}`}
               </h3>
               <div className="flex items-center">
-                <MapPin size={12} color={themeColors.text} />
-                <span
-                  className="text-sm ml-1"
-                  style={{ color: themeColors.text }}
-                >
-                  Room {device.room_number || device.room || "Unknown"} •
-                  Floor {device.floor_number !== undefined
+                <IoLocationOutline size={12} className={isDark ? "text-gray-400" : "text-gray-600"} />
+                <span className={`text-sm ml-1 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                  Room {device.room_number || device.room || "Unknown"} • Floor{" "}
+                  {device.floor_number !== undefined
                     ? device.floor_number
                     : device.floor || "N/A"}
                 </span>
@@ -317,12 +171,10 @@ const DeviceCard = ({ device, index = 0, tissueOnly = false }) => {
           <div
             className="flex items-center px-3 py-1.5 rounded-full gap-1"
             style={{
-              backgroundColor: isDark
-                ? statusConfig.bgDark
-                : statusConfig.bgLight,
+              backgroundColor: isDark ? statusConfig.bgDark : statusConfig.bgLight,
             }}
           >
-            {getStatusIcon(statusConfig.icon, 16, statusConfig.color)}
+            <StatusIcon size={16} style={{ color: statusConfig.color }} />
             <span
               className="text-sm font-semibold"
               style={{ color: statusConfig.color }}
@@ -347,10 +199,10 @@ const DeviceCard = ({ device, index = 0, tissueOnly = false }) => {
               style={{ backgroundColor: statusConfig.color }}
             />
             <span
-              className="text-xs font-semibold flex-1"
-              style={{
-                color: isDark ? "#FFFFFF" : statusConfig.color,
-              }}
+              className={`text-xs font-semibold flex-1 ${
+                isDark ? "text-white" : ""
+              }`}
+              style={{ color: isDark ? "#FFFFFF" : statusConfig.color }}
             >
               {device.current_status === "tamper"
                 ? "Tamper Alert • "
@@ -363,11 +215,17 @@ const DeviceCard = ({ device, index = 0, tissueOnly = false }) => {
                 : "Live • "}
               Updated {device.minutes_since_update || 0}m ago
             </span>
-            <div className="flex items-center justify-center">
+            <div className="px-1.5 py-1 rounded-lg">
               {["tamper", "empty"].includes(device.current_status) ? (
-                <AlertTriangle size={12} color={isDark ? "#FFFFFF" : statusConfig.color} />
+                <IoAlertCircleOutline
+                  size={12}
+                  style={{ color: isDark ? "#FFFFFF" : statusConfig.color }}
+                />
               ) : (
-                <Signal size={12} color={isDark ? "#FFFFFF" : statusConfig.color} />
+                <IoWifiOutline
+                  size={12}
+                  style={{ color: isDark ? "#FFFFFF" : statusConfig.color }}
+                />
               )}
             </div>
           </div>
@@ -397,28 +255,33 @@ const DeviceCard = ({ device, index = 0, tissueOnly = false }) => {
                   : statusConfig.color + "25",
               }}
             >
-              <Clock size={16} color={isDark ? "#B0B0B0" : themeColors.text} />
+              <IoTimeOutline
+                size={16}
+                className={isDark ? "text-gray-400" : "text-gray-700"}
+              />
             </div>
             <div className="flex-1">
               <p
-                className="text-xs uppercase tracking-wide mb-0.5"
-                style={{ color: isDark ? "#888888" : themeColors.text }}
+                className={`text-xs uppercase tracking-wider mb-0.5 ${
+                  isDark ? "text-gray-500" : "text-gray-600"
+                }`}
               >
                 Last Update
               </p>
               <p
-                className="text-sm font-medium"
-                style={{ color: isDark ? "#FFFFFF" : themeColors.heading }}
+                className={`text-sm font-medium ${
+                  isDark ? "text-white" : "text-gray-900"
+                }`}
               >
                 {lastAlertTime}
               </p>
             </div>
             <button
-              className="flex items-center gap-1 hover:scale-105 transition-transform duration-200"
               onClick={(e) => {
                 e.stopPropagation();
-                handleViewDetails();
+                handleCardPress();
               }}
+              className="flex items-center gap-1 hover:opacity-80 transition-opacity"
             >
               <span
                 className="text-sm font-medium"
@@ -426,159 +289,38 @@ const DeviceCard = ({ device, index = 0, tissueOnly = false }) => {
               >
                 View Details
               </span>
-              <ChevronRight size={16} color={isDark ? "#FFFFFF" : statusConfig.color} />
+              <IoChevronForward
+                size={16}
+                style={{ color: isDark ? "#FFFFFF" : statusConfig.color }}
+              />
             </button>
           </div>
         )}
       </div>
     </div>
   );
-};
+}
 
-// Demo component to showcase the DeviceCard
-const DeviceCardDemo = () => {
-  const { isDark, setIsDark } = useThemeContext();
+// Add this CSS to your global styles or as a styled component
+const pulseAnimation = `
+  @keyframes pulse {
+    0% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
   
-  // Sample device data
-  const sampleDevices = [
-    {
-      device_id: "DEV001",
-      device_name: "Tissue Dispenser A1",
-      current_status: "active",
-      is_active: true,
-      room_number: "101",
-      floor_number: 1,
-      last_alert_time: "2024-01-15T10:30:00Z",
-      minutes_since_update: 2,
-      current_tamper: false,
-    },
-    {
-      device_id: "DEV002",
-      device_name: "Tissue Dispenser B2",
-      current_status: "low",
-      is_active: true,
-      room_number: "205",
-      floor_number: 2,
-      last_alert_time: "2024-01-15T09:15:00Z",
-      minutes_since_update: 3,
-      current_tamper: false,
-    },
-    {
-      device_id: "DEV003",
-      device_name: "Tissue Dispenser C3",
-      current_status: "empty",
-      is_active: true,
-      room_number: "312",
-      floor_number: 3,
-      last_alert_time: "2024-01-15T08:45:00Z",
-      minutes_since_update: 1,
-      current_tamper: false,
-    },
-    {
-      device_id: "DEV004",
-      device_name: "Tissue Dispenser D4",
-      current_status: "tamper",
-      is_active: true,
-      room_number: "404",
-      floor_number: 4,
-      last_alert_time: "2024-01-15T11:00:00Z",
-      minutes_since_update: 4,
-      current_tamper: true,
-    },
-    {
-      device_id: "DEV005",
-      device_name: "Tissue Dispenser E5",
-      current_status: "offline",
-      is_active: false,
-      room_number: "501",
-      floor_number: 5,
-      last_alert_time: "2024-01-14T16:20:00Z",
-      minutes_since_update: 120,
-      current_tamper: false,
-    },
-  ];
+  .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+`;
 
-  return (
-    <div className={`min-h-screen transition-colors duration-300 ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
-      <div className="max-w-4xl mx-auto p-8">
-        <div className="mb-8 text-center">
-          <h1 className={`text-4xl font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-            Device Card Component
-          </h1>
-          <p className={`text-lg ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-            React.js + Tailwind CSS version with real-time status indicators
-          </p>
-        </div>
-
-        {/* Theme Toggle */}
-        <div className="mb-8 flex justify-center">
-          <button
-            onClick={() => setIsDark(!isDark)}
-            className={`px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
-              isDark 
-                ? 'bg-yellow-500 text-black hover:bg-yellow-400' 
-                : 'bg-gray-800 text-white hover:bg-gray-700'
-            }`}
-          >
-            {isDark ? '☀️ Light Mode' : '🌙 Dark Mode'}
-          </button>
-        </div>
-
-        {/* Device Cards */}
-        <div className="space-y-0">
-          {sampleDevices.map((device, index) => (
-            <DeviceCard
-              key={device.device_id}
-              device={device}
-              index={index}
-              tissueOnly={false}
-            />
-          ))}
-        </div>
-
-        {/* Features List */}
-        <div className={`mt-12 p-6 rounded-xl ${isDark ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
-          <h2 className={`text-xl font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-            Features
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className={`p-4 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-gray-50'}`}>
-              <h3 className={`font-semibold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                🎯 Real-time Status
-              </h3>
-              <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                Live activity indicators and status badges
-              </p>
-            </div>
-            <div className={`p-4 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-gray-50'}`}>
-              <h3 className={`font-semibold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                ✨ Smooth Animations
-              </h3>
-              <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                Staggered entrance animations and hover effects
-              </p>
-            </div>
-            <div className={`p-4 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-gray-50'}`}>
-              <h3 className={`font-semibold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                🎨 Theme Support
-              </h3>
-              <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                Dark/light mode with dynamic color schemes
-              </p>
-            </div>
-            <div className={`p-4 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-gray-50'}`}>
-              <h3 className={`font-semibold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                📱 Responsive Design
-              </h3>
-              <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                Works perfectly on all screen sizes
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default DeviceCardDemo;
+// Optional: If you need to inject the animation styles
+export const DeviceCardStyles = () => (
+  <style dangerouslySetInnerHTML={{ __html: pulseAnimation }} />
+);
