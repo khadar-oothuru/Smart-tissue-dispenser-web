@@ -2,7 +2,8 @@
 const COLORS = {
   // Light Theme
   light: {
-    background: "#F4F6FB", // soft cool white
+    background: "#F2F9FF",
+
     primary: "#7C3AED", // vivid purple
     logo: "#F59E42", // orange
     heading: "#22223B", // deep blue-black
@@ -13,7 +14,7 @@ const COLORS = {
     warning: "#FFB703", // amber yellow
     border: "#E9ECEF", // light gray
     surface: "#FFFFFF", // pure white
-    card: "#FFFFFF",
+    card: "#FBFBFB",
     muted: "#8B8FA3",
     accent: "#9333EA",
     secondary: "#6B7280",
