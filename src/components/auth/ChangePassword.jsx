@@ -1,6 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff, ArrowLeft, Check, X, Shield, Lock } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  ArrowLeft,
+  Check,
+  X,
+  Shield,
+  Lock,
+  Loader2,
+} from "lucide-react";
 import OTPModal from "../Profile/OtpModal";
 import { CustomAlert } from "../../components/common/CustomAlert";
 import { useTheme } from "../../hooks/useThemeContext";
@@ -29,7 +38,8 @@ export default function ChangePassword() {
   const [otpLoading, setOtpLoading] = useState(false);
   const [timer, setTimer] = useState(0);
 
-  const [customAlert, setCustomAlert] = useState({
+  // Custom Alert states
+  const [alertConfig, setAlertConfig] = useState({
     visible: false,
     type: "error",
     title: "",
@@ -48,10 +58,27 @@ export default function ChangePassword() {
     return () => clearInterval(interval);
   }, [timer, showOtpModal]);
 
-  // CustomAlert Functions
-  const showCustomAlert = (title, message, type = "error", action = null) => {
-    setCustomAlert({
+  // Custom alert functions
+  const showAlert = useCallback((config) => {
+    setAlertConfig({
       visible: true,
+      ...config,
+    });
+  }, []);
+
+  const hideAlert = useCallback(() => {
+    setAlertConfig({
+      visible: false,
+      type: "error",
+      title: "",
+      message: "",
+      primaryAction: null,
+      secondaryAction: null,
+    });
+  }, []);
+
+  const showCustomAlert = (title, message, type = "error", action = null) => {
+    showAlert({
       type,
       title,
       message,
@@ -59,14 +86,13 @@ export default function ChangePassword() {
         ? {
             text: "OK",
             onPress: () => {
-              setCustomAlert((prev) => ({ ...prev, visible: false }));
+              hideAlert();
               action();
             },
           }
         : {
             text: "OK",
-            onPress: () =>
-              setCustomAlert((prev) => ({ ...prev, visible: false })),
+            onPress: hideAlert,
           },
       secondaryAction: null,
     });
@@ -74,21 +100,30 @@ export default function ChangePassword() {
 
   const validatePasswords = () => {
     if (!oldPassword || !newPassword || !confirmPassword) {
-      showCustomAlert("Error", "Please fill all fields");
+      showCustomAlert("Missing Fields", "Please fill all fields", "warning");
       return false;
     }
     if (newPassword.length < 8) {
-      showCustomAlert("Error", "New password must be at least 8 characters");
+      showCustomAlert(
+        "Invalid Password",
+        "New password must be at least 8 characters",
+        "error"
+      );
       return false;
     }
     if (newPassword !== confirmPassword) {
-      showCustomAlert("Error", "New passwords do not match");
+      showCustomAlert(
+        "Password Mismatch",
+        "New passwords do not match",
+        "error"
+      );
       return false;
     }
     if (oldPassword === newPassword) {
       showCustomAlert(
-        "Error",
-        "New password must be different from old password"
+        "Invalid Password",
+        "New password must be different from old password",
+        "warning"
       );
       return false;
     }
@@ -105,7 +140,11 @@ export default function ChangePassword() {
       setShowOtpModal(true);
       setTimer(600); // 10 minutes
     } catch (error) {
-      showCustomAlert("Error", error.message || "Failed to send OTP");
+      showCustomAlert(
+        "OTP Failed",
+        error.message || "Failed to send OTP",
+        "error"
+      );
     } finally {
       setLoading(false);
     }
@@ -116,10 +155,14 @@ export default function ChangePassword() {
     try {
       const token = localStorage.getItem("accessToken");
       await sendPasswordChangeOTP(token);
-      showCustomAlert("Success", "New OTP sent to your email", "success");
+      showCustomAlert("OTP Sent", "New OTP sent to your email", "success");
       setTimer(600);
     } catch (error) {
-      showCustomAlert("Error", error.message || "Failed to resend OTP");
+      showCustomAlert(
+        "Resend Failed",
+        error.message || "Failed to resend OTP",
+        "error"
+      );
     } finally {
       setOtpLoading(false);
     }
@@ -145,8 +188,9 @@ export default function ChangePassword() {
       );
     } catch (error) {
       showCustomAlert(
-        "Error",
-        error.message || "Failed to verify OTP or change password"
+        "Verification Failed",
+        error.message || "Failed to verify OTP or change password",
+        "error"
       );
     } finally {
       setOtpLoading(false);
@@ -160,472 +204,403 @@ export default function ChangePassword() {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: themeColors.bg }}>
-      {/* Header */}
-      <div
-        className="sticky top-0 z-10 shadow-lg"
-        style={{ background: themeColors.headerBg || themeColors.cardBg }}
+    <div
+      className="min-h-screen flex items-center justify-center bg-no-repeat bg-cover bg-center w-full"
+      style={{
+        background:
+          themeColors.bg ||
+          "linear-gradient(135deg, #23272b 60%, #181c1f 100%)",
+      }}
+    >
+      {/* Back Button - Floating */}
+      <button
+        onClick={() => navigate(-1)}
+        className="fixed top-6 left-6 p-3 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl z-50"
+        style={{
+          background: themeColors.cardGlassBg || "rgba(24,28,31,0.65)",
+          border: `1.5px solid ${
+            themeColors.cardBorder || "rgba(255,255,255,0.18)"
+          }`,
+          backdropFilter: "blur(18px)",
+          WebkitBackdropFilter: "blur(18px)",
+        }}
       >
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => navigate(-1)}
-              className="p-3 rounded-xl transition-all duration-200"
-              style={{
-                background: themeColors.primaryBg,
-                ":hover": {
-                  background:
-                    themeColors.primaryBgHover || themeColors.primaryBg,
-                },
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background =
-                  themeColors.primaryBgHover || themeColors.primaryBg;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = themeColors.primaryBg;
-              }}
-            >
-              <ArrowLeft
-                className="w-6 h-6"
-                style={{ color: themeColors.primary }}
-              />
-            </button>
-            <h1
-              className="text-2xl font-bold tracking-wide"
-              style={{ color: themeColors.text }}
-            >
-              Change Password
-            </h1>
-            <div className="w-12" />
-          </div>
-        </div>
-      </div>
+        <ArrowLeft className="w-6 h-6" style={{ color: themeColors.primary }} />
+      </button>
 
-      {/* Content */}
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-[950px] mx-auto">
+      <div
+        className="flex flex-row w-full max-w-6xl min-w-[700px] rounded-3xl overflow-hidden shadow-2xl mx-auto"
+        style={{
+          background:
+            themeColors.cardGlassBg ||
+            "linear-gradient(135deg, rgba(24,28,31,0.65) 60%, rgba(35,39,43,0.55) 100%)",
+          border: `1.5px solid ${
+            themeColors.cardBorder || "rgba(255,255,255,0.18)"
+          }`,
+          boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.15)",
+          WebkitBackdropFilter: "blur(18px)",
+          backdropFilter: "blur(18px)",
+          maxHeight: "720px",
+          minHeight: "400px",
+        }}
+      >
+        {/* Left: Form */}
+        <div className="flex-1 flex flex-col items-center justify-center px-10 py-10">
           <div
-            className="rounded-3xl shadow-2xl flex flex-col lg:flex-row overflow-hidden border"
-            style={{
-              background: isDark
-                ? "rgba(30, 30, 30, 0.65)"
-                : "rgba(255, 255, 255, 0.65)",
-              minHeight: "600px",
-              width: "100%",
-              maxWidth: "950px",
-              backdropFilter: "blur(16px) saturate(180%)",
-              WebkitBackdropFilter: "blur(16px) saturate(180%)",
-              borderColor: themeColors.border || themeColors.cardBorder,
-              borderWidth: "1.5px",
-              boxShadow: isDark
-                ? "0 8px 32px 0 rgba(0,0,0,0.37)"
-                : "0 8px 32px 0 rgba(31, 38, 135, 0.10)",
-            }}
+            className="w-full max-w-md mx-auto pb-2 flex flex-col items-center"
+            style={{ paddingTop: 0, paddingBottom: 0 }}
           >
-            {/* Image Section */}
-            <div className="relative w-full lg:w-[44%] min-h-[400px] lg:min-h-[600px] flex-shrink-0">
-              <img
-                src={resetimg}
-                alt="Security"
-                className="w-full h-full object-cover"
+            <div className="flex items-center gap-3 mb-4 justify-center w-full">
+              <div
+                className="p-3 rounded-xl flex items-center justify-center"
                 style={{
-                  minHeight: "400px",
-                  height: "100%",
-                  maxHeight: "600px",
+                  background: themeColors.primaryBg || "rgba(124,58,237,0.1)",
                 }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-8">
-                <div>
-                  <div className="flex items-center gap-3 mb-4"></div>
-                </div>
+              >
+                <Lock
+                  className="w-8 h-8"
+                  style={{ color: themeColors.primary }}
+                />
               </div>
-              {/* Decorative elements */}
-              <div
-                className="absolute -top-4 -right-4 w-24 h-24 rounded-full opacity-20 blur-xl"
-                style={{ background: themeColors.primary }}
-              ></div>
-              <div
-                className="absolute -bottom-4 -left-4 w-32 h-32 rounded-full opacity-20 blur-xl"
-                style={{
-                  background: themeColors.secondary || themeColors.primary,
-                }}
-              ></div>
+              <h2
+                className="text-4xl font-extrabold text-center tracking-tight"
+                style={{ color: themeColors.primary, letterSpacing: 1 }}
+              >
+                Change Password
+              </h2>
             </div>
-
-            {/* Form Section */}
-            <div
-              className="flex-1 flex flex-col justify-center items-center p-6 lg:p-10"
-              style={{ minHeight: "400px", maxHeight: "600px", width: "100%" }}
+            <p
+              className="text-center mb-8 text-base"
+              style={{ color: themeColors.text, opacity: 0.7 }}
             >
-              <div className="flex items-center gap-3 mb-8 w-full max-w-md">
+              Keep your account secure with a strong password
+            </p>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSendOTP();
+              }}
+              className="flex flex-col gap-0 mt-2 items-center w-full"
+            >
+              {/* Current Password */}
+              <div className="w-full mb-6">
+                <label
+                  htmlFor="oldPassword"
+                  className="block text-sm font-semibold mb-2"
+                  style={{ color: themeColors.text }}
+                >
+                  Current Password
+                </label>
                 <div
-                  className="p-3 rounded-xl"
-                  style={{ background: themeColors.primaryBg }}
+                  className="flex items-center px-4 py-3 rounded-xl border-2 transition-all duration-200 bg-opacity-80"
+                  style={{
+                    borderColor: themeColors.cardBorder,
+                    background: themeColors.inputBg,
+                  }}
                 >
                   <Lock
-                    className="w-6 h-6"
+                    className="w-5 h-5 mr-3"
                     style={{ color: themeColors.primary }}
                   />
-                </div>
-                <div>
-                  <h3
-                    className="text-xl font-bold"
+                  <input
+                    id="oldPassword"
+                    type={showOldPassword ? "text" : "password"}
+                    value={oldPassword}
+                    onChange={(e) => setOldPassword(e.target.value)}
+                    placeholder="Enter current password"
+                    disabled={loading}
+                    className="flex-1 bg-transparent outline-none text-base font-medium"
                     style={{ color: themeColors.text }}
+                  />
+                  <button
+                    type="button"
+                    className="ml-2"
+                    onClick={() => setShowOldPassword(!showOldPassword)}
+                    tabIndex={-1}
                   >
-                    Update Password
-                  </h3>
-                  <p
-                    className="text-sm"
-                    style={{ color: themeColors.textSecondary }}
-                  >
-                    Keep your account secure
-                  </p>
+                    {showOldPassword ? (
+                      <Eye className="w-5 h-5 text-gray-400" />
+                    ) : (
+                      <EyeOff className="w-5 h-5 text-gray-400" />
+                    )}
+                  </button>
                 </div>
               </div>
 
-              <form
-                onSubmit={(e) => e.preventDefault()}
-                className="space-y-6 w-full max-w-md"
-              >
-                {/* Current Password */}
-                <div>
-                  <label
-                    className="block text-sm font-semibold mb-3"
-                    style={{ color: themeColors.text }}
-                  >
-                    Current Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showOldPassword ? "text" : "password"}
-                      value={oldPassword}
-                      onChange={(e) => setOldPassword(e.target.value)}
-                      placeholder="Enter current password"
-                      disabled={loading}
-                      className="w-full px-5 py-2 rounded-xl border-2 transition-all duration-200 focus:outline-none focus:ring-4"
-                      style={{
-                        background: themeColors.inputBg,
-                        borderColor: themeColors.cardBorder,
-                        color: themeColors.text,
-                        "::placeholder": { color: themeColors.textSecondary },
-                      }}
-                      onFocus={(e) => {
-                        e.currentTarget.style.borderColor = themeColors.primary;
-                        e.currentTarget.style.boxShadow = `0 0 0 4px ${themeColors.primaryBg}40`;
-                      }}
-                      onBlur={(e) => {
-                        e.currentTarget.style.borderColor =
-                          themeColors.cardBorder;
-                        e.currentTarget.style.boxShadow = "none";
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowOldPassword(!showOldPassword)}
-                      className="absolute right-4 top-1/2 transform -translate-y-1/2 p-2 rounded-lg transition-colors"
-                      style={{ color: themeColors.textSecondary }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.color = themeColors.text;
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.color = themeColors.textSecondary;
-                      }}
-                    >
-                      {showOldPassword ? (
-                        <EyeOff className="w-5 h-5" />
-                      ) : (
-                        <Eye className="w-5 h-5" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                {/* New Password */}
-                <div>
-                  <label
-                    className="block text-sm font-semibold mb-3"
-                    style={{ color: themeColors.text }}
-                  >
-                    New Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showNewPassword ? "text" : "password"}
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="Enter new password"
-                      disabled={loading}
-                      className="w-full px-5 py-2 rounded-xl border-2 transition-all duration-200 focus:outline-none focus:ring-4"
-                      style={{
-                        background: themeColors.inputBg,
-                        borderColor: themeColors.cardBorder,
-                        color: themeColors.text,
-                        "::placeholder": { color: themeColors.textSecondary },
-                      }}
-                      onFocus={(e) => {
-                        e.currentTarget.style.borderColor = themeColors.primary;
-                        e.currentTarget.style.boxShadow = `0 0 0 4px ${themeColors.primaryBg}40`;
-                      }}
-                      onBlur={(e) => {
-                        e.currentTarget.style.borderColor =
-                          themeColors.cardBorder;
-                        e.currentTarget.style.boxShadow = "none";
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowNewPassword(!showNewPassword)}
-                      className="absolute right-4 top-1/2 transform -translate-y-1/2 p-2 rounded-lg transition-colors"
-                      style={{ color: themeColors.textSecondary }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.color = themeColors.text;
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.color = themeColors.textSecondary;
-                      }}
-                    >
-                      {showNewPassword ? (
-                        <Eye className="w-5 h-5" />
-                      ) : (
-                        <EyeOff className="w-5 h-5" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Confirm Password */}
-                <div>
-                  <label
-                    className="block text-sm font-semibold mb-3"
-                    style={{ color: themeColors.text }}
-                  >
-                    Confirm New Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showConfirmPassword ? "text" : "password"}
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Confirm new password"
-                      disabled={loading}
-                      className="w-full px-5 py-2 rounded-xl border-2 transition-all duration-200 focus:outline-none focus:ring-4"
-                      style={{
-                        background: themeColors.inputBg,
-                        borderColor: themeColors.cardBorder,
-                        color: themeColors.text,
-                        "::placeholder": { color: themeColors.textSecondary },
-                      }}
-                      onFocus={(e) => {
-                        e.currentTarget.style.borderColor = themeColors.primary;
-                        e.currentTarget.style.boxShadow = `0 0 0 4px ${themeColors.primaryBg}40`;
-                      }}
-                      onBlur={(e) => {
-                        e.currentTarget.style.borderColor =
-                          themeColors.cardBorder;
-                        e.currentTarget.style.boxShadow = "none";
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setShowConfirmPassword(!showConfirmPassword)
-                      }
-                      className="absolute right-4 top-1/2 transform -translate-y-1/2 p-2 rounded-lg transition-colors"
-                      style={{ color: themeColors.textSecondary }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.color = themeColors.text;
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.color = themeColors.textSecondary;
-                      }}
-                    >
-                      {showConfirmPassword ? (
-                        <Eye className="w-5 h-5" />
-                      ) : (
-                        <EyeOff className="w-5 h-5" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Requirements */}
+              {/* New Password */}
+              <div className="w-full mb-6">
+                <label
+                  htmlFor="newPassword"
+                  className="block text-sm font-semibold mb-2"
+                  style={{ color: themeColors.text }}
+                >
+                  New Password
+                </label>
                 <div
-                  className="rounded-lg p-3 border"
+                  className="flex items-center px-4 py-3 rounded-xl border-2 transition-all duration-200 bg-opacity-80"
                   style={{
-                    background: isDark
-                      ? `${themeColors.cardBg}80`
-                      : `${themeColors.primaryBg}40`,
-                    borderColor: isDark
-                      ? themeColors.cardBorder
-                      : themeColors.primary,
+                    borderColor: themeColors.cardBorder,
+                    background: themeColors.inputBg,
                   }}
                 >
-                  <h3
-                    className="font-semibold mb-2 text-xs"
-                    style={{ color: themeColors.text }}
-                  >
-                    Password requirements:
-                  </h3>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-4 h-4 rounded-full flex items-center justify-center transition-all"
-                        style={{
-                          background: requirementsMet.length
-                            ? themeColors.success
-                            : isDark
-                            ? themeColors.cardBorder
-                            : "#e5e7eb",
-                        }}
-                      >
-                        {requirementsMet.length ? (
-                          <Check className="w-2.5 h-2.5 text-white" />
-                        ) : (
-                          <X className="w-2.5 h-2.5 text-white" />
-                        )}
-                      </div>
-                      <span
-                        className="text-xs font-medium"
-                        style={{
-                          color: requirementsMet.length
-                            ? themeColors.success
-                            : themeColors.textSecondary,
-                        }}
-                      >
-                        At least 8 characters
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-4 h-4 rounded-full flex items-center justify-center transition-all"
-                        style={{
-                          background: requirementsMet.different
-                            ? themeColors.success
-                            : isDark
-                            ? themeColors.cardBorder
-                            : "#e5e7eb",
-                        }}
-                      >
-                        {requirementsMet.different ? (
-                          <Check className="w-2.5 h-2.5 text-white" />
-                        ) : (
-                          <X className="w-2.5 h-2.5 text-white" />
-                        )}
-                      </div>
-                      <span
-                        className="text-xs font-medium"
-                        style={{
-                          color: requirementsMet.different
-                            ? themeColors.success
-                            : themeColors.textSecondary,
-                        }}
-                      >
-                        Different from current password
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-4 h-4 rounded-full flex items-center justify-center transition-all"
-                        style={{
-                          background: requirementsMet.match
-                            ? themeColors.success
-                            : isDark
-                            ? themeColors.cardBorder
-                            : "#e5e7eb",
-                        }}
-                      >
-                        {requirementsMet.match ? (
-                          <Check className="w-2.5 h-2.5 text-white" />
-                        ) : (
-                          <X className="w-2.5 h-2.5 text-white" />
-                        )}
-                      </div>
-                      <span
-                        className="text-xs font-medium"
-                        style={{
-                          color: requirementsMet.match
-                            ? themeColors.success
-                            : themeColors.textSecondary,
-                        }}
-                      >
-                        Passwords match
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Submit Button */}
-                <button
-                  type="button"
-                  onClick={handleSendOTP}
-                  disabled={loading}
-                  className="w-full py-4 px-6 rounded-xl font-semibold transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
-                  style={{
-                    background: loading
-                      ? themeColors.disabledBg || "#6b7280"
-                      : themeColors.primary,
-                    color: loading
-                      ? themeColors.disabledText || "#d1d5db"
-                      : themeColors.onPrimary,
-                    cursor: loading ? "not-allowed" : "pointer",
-                    opacity: loading ? 0.7 : 1,
-                  }}
-                >
-                  {loading ? (
-                    <div className="flex items-center justify-center gap-3">
-                      <div
-                        className="w-5 h-5 border-3 border-t-transparent rounded-full animate-spin"
-                        style={{ borderColor: themeColors.onPrimary }}
-                      ></div>
-                      <span>Processing...</span>
-                    </div>
-                  ) : (
-                    "Send OTP"
-                  )}
-                </button>
-              </form>
-            </div>
-          </div>
-
-          {/* Mobile Image Section */}
-          <div className="lg:hidden mt-12">
-            <div
-              className="rounded-2xl overflow-hidden shadow-lg"
-              style={{ background: themeColors.cardBg }}
-            >
-              <img
-                src={resetimg}
-                alt="Security"
-                className="w-full h-48 object-cover"
-              />
-              <div className="p-6">
-                <div className="flex items-center gap-3 mb-3">
-                  <Shield
-                    className="w-8 h-8"
+                  <Lock
+                    className="w-5 h-5 mr-3"
                     style={{ color: themeColors.primary }}
                   />
-                  <h3
-                    className="text-lg font-bold"
+                  <input
+                    id="newPassword"
+                    type={showNewPassword ? "text" : "password"}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Enter new password"
+                    disabled={loading}
+                    className="flex-1 bg-transparent outline-none text-base font-medium"
                     style={{ color: themeColors.text }}
+                  />
+                  <button
+                    type="button"
+                    className="ml-2"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    tabIndex={-1}
                   >
-                    Keep Your Account Secure
-                  </h3>
+                    {showNewPassword ? (
+                      <Eye className="w-5 h-5 text-gray-400" />
+                    ) : (
+                      <EyeOff className="w-5 h-5 text-gray-400" />
+                    )}
+                  </button>
                 </div>
-                <p
-                  className="text-sm"
-                  style={{ color: themeColors.textSecondary }}
-                >
-                  Regular password updates help protect your account from
-                  unauthorized access.
-                </p>
               </div>
+
+              {/* Confirm Password */}
+              <div className="w-full mb-6">
+                <label
+                  htmlFor="confirmPassword"
+                  className="block text-sm font-semibold mb-2"
+                  style={{ color: themeColors.text }}
+                >
+                  Confirm New Password
+                </label>
+                <div
+                  className="flex items-center px-4 py-3 rounded-xl border-2 transition-all duration-200 bg-opacity-80"
+                  style={{
+                    borderColor: themeColors.cardBorder,
+                    background: themeColors.inputBg,
+                  }}
+                >
+                  <Lock
+                    className="w-5 h-5 mr-3"
+                    style={{ color: themeColors.primary }}
+                  />
+                  <input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm new password"
+                    disabled={loading}
+                    className="flex-1 bg-transparent outline-none text-base font-medium"
+                    style={{ color: themeColors.text }}
+                  />
+                  <button
+                    type="button"
+                    className="ml-2"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    tabIndex={-1}
+                  >
+                    {showConfirmPassword ? (
+                      <Eye className="w-5 h-5 text-gray-400" />
+                    ) : (
+                      <EyeOff className="w-5 h-5 text-gray-400" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Requirements */}
+              <div
+                className="rounded-xl p-2 border mb-4 w-full"
+                style={{
+                  background: isDark
+                    ? "rgba(124,58,237,0.05)"
+                    : "rgba(124,58,237,0.03)",
+                  borderColor: isDark
+                    ? themeColors.cardBorder
+                    : "rgba(124,58,237,0.2)",
+                }}
+              >
+                <h3
+                  className="font-semibold mb-1 text-sm"
+                  style={{ color: themeColors.text }}
+                >
+                  Password requirements:
+                </h3>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-5 h-5 rounded-full flex items-center justify-center transition-all"
+                      style={{
+                        background: requirementsMet.length
+                          ? themeColors.success || "#10b981"
+                          : isDark
+                          ? themeColors.cardBorder
+                          : "#e5e7eb",
+                      }}
+                    >
+                      {requirementsMet.length ? (
+                        <Check className="w-3 h-3 text-white" />
+                      ) : (
+                        <X className="w-3 h-3 text-white" />
+                      )}
+                    </div>
+                    <span
+                      className="text-sm font-medium"
+                      style={{
+                        color: requirementsMet.length
+                          ? themeColors.success || "#10b981"
+                          : themeColors.textSecondary,
+                      }}
+                    >
+                      At least 8 characters
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-5 h-5 rounded-full flex items-center justify-center transition-all"
+                      style={{
+                        background: requirementsMet.different
+                          ? themeColors.success || "#10b981"
+                          : isDark
+                          ? themeColors.cardBorder
+                          : "#e5e7eb",
+                      }}
+                    >
+                      {requirementsMet.different ? (
+                        <Check className="w-3 h-3 text-white" />
+                      ) : (
+                        <X className="w-3 h-3 text-white" />
+                      )}
+                    </div>
+                    <span
+                      className="text-sm font-medium"
+                      style={{
+                        color: requirementsMet.different
+                          ? themeColors.success || "#10b981"
+                          : themeColors.textSecondary,
+                      }}
+                    >
+                      Different from current password
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-5 h-5 rounded-full flex items-center justify-center transition-all"
+                      style={{
+                        background: requirementsMet.match
+                          ? themeColors.success || "#10b981"
+                          : isDark
+                          ? themeColors.cardBorder
+                          : "#e5e7eb",
+                      }}
+                    >
+                      {requirementsMet.match ? (
+                        <Check className="w-3 h-3 text-white" />
+                      ) : (
+                        <X className="w-3 h-3 text-white" />
+                      )}
+                    </div>
+                    <span
+                      className="text-sm font-medium"
+                      style={{
+                        color: requirementsMet.match
+                          ? themeColors.success || "#10b981"
+                          : themeColors.textSecondary,
+                      }}
+                    >
+                      Passwords match
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 px-6 rounded-xl font-semibold transition-all duration-200"
+                style={{
+                  background: themeColors.primary,
+                  color: themeColors.onPrimary,
+                  boxShadow: "0 2px 8px 0 rgba(124,58,237,0.10)",
+                  opacity: loading ? 0.7 : 1,
+                  cursor: loading ? "wait" : "pointer",
+                  letterSpacing: 0.5,
+                }}
+              >
+                {loading ? (
+                  <div className="flex items-center justify-center">
+                    <Loader2 className="animate-spin h-5 w-5 mr-2" />
+                    <span>Processing...</span>
+                  </div>
+                ) : (
+                  <span>Send OTP</span>
+                )}
+              </button>
+            </form>
+
+            {/* Security Note */}
+            <div className="text-center mt-6">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Shield
+                  className="w-4 h-4"
+                  style={{ color: themeColors.primary }}
+                />
+                <span
+                  className="text-sm font-semibold"
+                  style={{ color: themeColors.primary }}
+                >
+                  Security Tip
+                </span>
+              </div>
+              <p
+                className="text-xs"
+                style={{ color: themeColors.textSecondary, opacity: 0.8 }}
+              >
+                Regular password updates help protect your account from
+                unauthorized access
+              </p>
             </div>
           </div>
         </div>
+
+        {/* Vertical Divider */}
+        <div className="hidden md:flex items-center justify-center">
+          <div className="h-[70%] w-px bg-gray-500 opacity-30 mx-2" />
+        </div>
+
+        {/* Right: Visual */}
+        <div className="hidden md:flex flex-1 items-center justify-center relative bg-transparent max-w-xl">
+          <style>{`
+            @keyframes floatY {
+              0% { transform: translateY(0); }
+              50% { transform: translateY(-18px); }
+              100% { transform: translateY(0); }
+            }
+          `}</style>
+          <img
+            src={resetimg}
+            alt="Reset Password Visual"
+            className="object-contain relative z-10 max-h-[60vh] max-w-[420px] drop-shadow-2xl rounded-2xl"
+            style={{
+              filter: "none",
+              animation: "floatY 3.2s ease-in-out infinite",
+            }}
+          />
+        </div>
       </div>
 
-      {/* OTP Modal - Pass theme colors */}
+      {/* OTP Modal */}
       <OTPModal
         visible={showOtpModal}
         onClose={() => setShowOtpModal(false)}
@@ -639,15 +614,15 @@ export default function ChangePassword() {
         isDark={isDark}
       />
 
-      {/* CustomAlert - Pass theme colors */}
+      {/* CustomAlert */}
       <CustomAlert
-        visible={customAlert.visible}
-        onClose={() => setCustomAlert((prev) => ({ ...prev, visible: false }))}
-        title={customAlert.title}
-        message={customAlert.message}
-        type={customAlert.type}
-        primaryAction={customAlert.primaryAction}
-        secondaryAction={customAlert.secondaryAction}
+        visible={alertConfig.visible}
+        type={alertConfig.type}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        onClose={hideAlert}
+        primaryAction={alertConfig.primaryAction}
+        secondaryAction={alertConfig.secondaryAction}
         themeColors={themeColors}
         isDark={isDark}
       />

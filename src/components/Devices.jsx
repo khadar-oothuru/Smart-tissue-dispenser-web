@@ -748,62 +748,62 @@ const DeviceCard = ({ device, onEdit, onDelete }) => {
 
   return (
     <div
-      className="rounded-xl shadow-2xl w-full max-w-5xl mx-auto border transition-all duration-300 mb-7 flex flex-col md:flex-row items-stretch md:items-stretch group overflow-hidden"
+      className="rounded-lg shadow-lg w-full max-w-5xl mx-auto border transition-all duration-300 mb-4 flex flex-col md:flex-row items-stretch md:items-stretch group overflow-hidden"
       style={{
-        minHeight: "180px",
-        maxHeight: "260px",
+        minHeight: "110px",
+        maxHeight: "170px",
         width: "100%",
-        maxWidth: "1200px",
-        background: `linear-gradient(120deg, ${themeColors.surface} 70%, ${themeColors.card} 100%)`,
-        border: `2px solid ${themeColors.border}`,
-        boxShadow: `0 20px 40px ${themeColors.border}30`,
+        maxWidth: "1100px",
+        background: `linear-gradient(120deg, ${themeColors.surface} 80%, ${themeColors.card} 100%)`,
+        border: `1px solid ${themeColors.border}55`,
+        boxShadow: `0 8px 18px ${themeColors.border}18`,
         color: themeColors.text,
-        borderRadius: 18,
+        borderRadius: 12,
         padding: 0,
       }}
     >
-      <div className="flex flex-col md:flex-row items-center md:items-stretch space-y-4 md:space-y-0 md:space-x-6 z-10 w-full p-8 md:p-10">
+      <div className="flex flex-col md:flex-row items-center md:items-stretch space-y-2 md:space-y-0 md:space-x-4 z-10 w-full p-4 md:p-6">
         <div
-          className="h-14 w-14 rounded-xl flex items-center justify-center shadow-lg bg-white/70 dark:bg-gray-900/70 transition-transform duration-200 border-2 mr-0 md:mr-6"
+          className="h-10 w-10 rounded-lg flex items-center justify-center shadow bg-white/60 dark:bg-gray-900/60 transition-transform duration-200 border mr-0 md:mr-4"
           style={{
             background: isDark
-              ? themeColors.primary + "22"
-              : themeColors.primary + "11",
-            borderColor: themeColors.primary,
+              ? themeColors.primary + "13"
+              : themeColors.primary + "08",
+            borderColor: themeColors.primary + "55",
           }}
         >
           <Smartphone
-            className="h-7 w-7 drop-shadow"
-            style={{ color: themeColors.primary }}
+            className="h-5 w-5 drop-shadow"
+            style={{ color: themeColors.primary + "bb" }}
           />
         </div>
         <div className="flex-1 min-w-0 flex flex-col justify-center md:justify-between">
-          <div className="flex flex-wrap items-center gap-3 mb-2">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
             <h3
-              className="text-2xl font-extrabold truncate"
-              style={{ color: themeColors.primary }}
+              className="text-lg font-bold truncate"
+              style={{ color: themeColors.primary + "cc" }}
             >
               {device.name || device.device_name || `Device ${device.id}`}
             </h3>
             <span
-              className="text-xs font-semibold px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-300"
+              className="text-[10px] font-semibold px-2 py-0.5 rounded bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400"
               title="Device ID"
             >
               ID: {device.id}
             </span>
           </div>
-          <div className="flex flex-wrap gap-3 items-center text-base mt-1">
-            <span className="inline-flex items-center font-medium text-gray-700 dark:text-gray-300 px-3 py-1 rounded-lg bg-blue-50 dark:bg-blue-900/40">
-              <Home className="h-4 w-4 mr-1 text-blue-400" />
+          <div className="flex flex-wrap gap-2 items-center text-sm mt-0.5">
+            <span className="inline-flex items-center font-medium text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800">
+              <Home className="h-3.5 w-3.5 mr-1 text-blue-300" />
               Room {device.room_number}
             </span>
-            <span className="inline-flex items-center font-medium text-gray-700 dark:text-gray-300 px-3 py-1 rounded-lg bg-purple-50 dark:bg-purple-900/40">
-              <Building2 className="h-4 w-4 mr-1 text-purple-400" />
+            <span className="inline-flex items-center font-medium text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded bg-purple-50 dark:bg-purple-900/30 border border-purple-100 dark:border-purple-800">
+              <Building2 className="h-3.5 w-3.5 mr-1 text-purple-300" />
               Floor {device.floor_number}
             </span>
             {restRoomType && (
               <span
-                className="inline-flex items-center font-medium px-3 py-1 rounded-lg bg-yellow-50 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 border border-yellow-200 dark:border-yellow-700"
+                className="inline-flex items-center font-medium px-2 py-0.5 rounded bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-200 border border-yellow-100 dark:border-yellow-800"
                 style={{
                   fontWeight: 500,
                   letterSpacing: 0.2,
@@ -815,46 +815,46 @@ const DeviceCard = ({ device, onEdit, onDelete }) => {
             )}
             {addedDate && (
               <span
-                className="inline-flex items-center font-medium px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                className="inline-flex items-center font-medium px-2 py-0.5 rounded bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-300 border border-slate-100 dark:border-slate-700"
                 style={{
                   fontWeight: 500,
                   letterSpacing: 0.2,
                 }}
               >
-                <Calendar className="h-4 w-4 mr-1 text-slate-400" />
+                <Calendar className="h-3.5 w-3.5 mr-1 text-slate-400" />
                 {addedDate}
               </span>
             )}
           </div>
         </div>
-        <div className="flex flex-col items-end justify-between ml-0 md:ml-6 gap-3 md:gap-4">
+        <div className="flex flex-col items-end justify-between ml-0 md:ml-4 gap-2 md:gap-3">
           <button
             onClick={() => onEdit(device)}
-            className="hover:scale-110 p-3 rounded-full transition-all duration-200 border shadow-md"
+            className="hover:scale-105 p-2 rounded-full transition-all duration-200 border shadow"
             style={{
-              color: themeColors.primary,
-              borderColor: themeColors.primary,
+              color: themeColors.primary + "cc",
+              borderColor: themeColors.primary + "55",
               backgroundColor: "transparent",
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor =
-                themeColors.primary + "15";
+                themeColors.primary + "10";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = "transparent";
             }}
             title="Edit Device"
           >
-            <Edit className="h-5 w-5" />
+            <Edit className="h-4 w-4" />
           </button>
           {device.id && (
             <button
               onClick={() => onDelete(device)}
-              className="hover:scale-110 hover:bg-red-100 dark:hover:bg-red-900 p-3 rounded-full transition-all duration-200 border border-red-200 dark:border-red-700 shadow-md"
-              style={{ color: themeColors.danger }}
+              className="hover:scale-105 hover:bg-red-50 dark:hover:bg-red-900 p-2 rounded-full transition-all duration-200 border border-red-100 dark:border-red-700 shadow"
+              style={{ color: themeColors.danger + "cc" }}
               title="Delete Device"
             >
-              <Trash2 className="h-5 w-5" />
+              <Trash2 className="h-4 w-4" />
             </button>
           )}
         </div>
@@ -1403,28 +1403,29 @@ const Devices = () => {
 
       {/* Search - matches mobile app's search */}
       <div className="w-full flex justify-center">
-        <div className="relative w-full max-w-7xl">
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6  z-10" />
+        <div className="relative w-full">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 z-10 text-gray-400 dark:text-gray-500" />
           <input
             type="text"
-            placeholder="Search devices by name, room, or floor..."
+            placeholder="Search devices..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-14 pr-4 py-3 w-full rounded-md border-2 focus:outline-none transition-all duration-200 text-lg shadow-lg"
+            className="pl-11 pr-3 py-2 w-full rounded-lg border focus:outline-none transition-all duration-200 text-base shadow-md"
             style={{
               background: `${themeColors.surface}cc`,
               borderColor: themeColors.border,
-              boxShadow: "0 2px 8px " + themeColors.border + "20",
-              backdropFilter: "blur(18px)",
-              WebkitBackdropFilter: "blur(18px)",
+              boxShadow: `0 1px 4px ${themeColors.border}18`,
               color: themeColors.text,
-              borderRadius: 5,
+              borderRadius: 12,
+              minHeight: 40,
+              width: "100%",
+              maxWidth: "100%",
             }}
             onFocus={(e) =>
-              (e.target.style.boxShadow = `0 0 0 3px ${themeColors.primary}55`)
+              (e.target.style.boxShadow = `0 0 0 2px ${themeColors.primary}55`)
             }
             onBlur={(e) =>
-              (e.target.style.boxShadow = `0 2px 8px ${themeColors.border}20`)
+              (e.target.style.boxShadow = `0 1px 4px ${themeColors.border}18`)
             }
           />
         </div>

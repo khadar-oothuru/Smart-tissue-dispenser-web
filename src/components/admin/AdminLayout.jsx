@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
+import { useWebSocketContext } from "../../context/WebSocketContext";
+import NotificationsScreen from "../Notifications/Notifications";
+import NotificationIcon from "../Notifications/NotificationIcon";
 
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { useTheme } from "../../context/ThemeContext";
 // import ThemeToggle from "../ThemeToggle";
@@ -19,13 +22,18 @@ import {
   ChevronRight,
   Contact,
   Bell,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 
 const AdminLayout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // const [showNotifications, setShowNotifications] = useState(false);
   const location = useLocation();
   const { user, logout } = useAuth();
   const { theme } = useTheme();
+  const { isConnected } = useWebSocketContext();
+  const navigate = useNavigate();
 
   const navigation = [
     {
@@ -141,17 +149,34 @@ const AdminLayout = ({ children }) => {
           </div>
 
           <div className="flex items-center gap-6 pr-8">
-            {/* Bell Icon (Notification) */}
-            <button
-              type="button"
-              className="hidden sm:flex items-center justify-center w-11 h-11 rounded-full bg-[var(--color-background)] border border-[var(--color-border)] hover:bg-[var(--color-primary)] hover:text-white hover:border-[var(--color-primary)] transition-all duration-200 cursor-pointer"
-              style={{ outline: "none", border: "none" }}
-              aria-label="Notifications"
-              tabIndex={0}
-              onClick={() => {}}
+            {/* WebSocket Connection Status Icon */}
+            <div
+              className="flex items-center"
+              title={isConnected ? "WebSocket Live" : "WebSocket Offline"}
             >
-              <Bell className="h-6 w-6" />
-            </button>
+              <span
+                className={`px-3 py-1 rounded-full text-xs font-semibold select-none shadow-sm border transition-colors duration-200 ${
+                  isConnected
+                    ? "bg-green-100 text-green-700 border-green-400"
+                    : "bg-red-100 text-red-700 border-red-400"
+                }`}
+              >
+                {isConnected ? "Live" : "Offline"}
+              </span>
+            </div>
+            {/* Notification Icon with unread count */}
+            <div className="hidden sm:flex items-center justify-center w-11 h-11 relative">
+              <NotificationIcon
+                color={theme === "dark" ? "#fff" : "#333"}
+                hoverColor={
+                  getComputedStyle(document.documentElement).getPropertyValue(
+                    "--color-primary"
+                  ) || "#007bff"
+                }
+                onClick={() => navigate("/admin/notifications")}
+                disableNavigate={true}
+              />
+            </div>
 
             <div className="hidden sm:block text-right">
               <button
@@ -193,6 +218,8 @@ const AdminLayout = ({ children }) => {
               )}
             </div>
           </div>
+
+          {/* Notifications Drawer/Modal removed: now handled by route */}
         </header>
 
         {/* Page Content */}
