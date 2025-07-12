@@ -2,133 +2,42 @@ import React, { useState, useCallback, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Eye, EyeOff, Lock, Mail, Loader2 } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
-import ThemeToggle from "../ThemeToggle";
+// import ThemeToggle from "../ThemeToggle";
 import { useAuth } from "../../hooks/useAuth";
-import fitnessImg from "../../assets/images/Sign up-amico.png"
+import fitnessImg from "../../assets/images/Tablet login-amico.png";
 import { useTheme } from "../../context/ThemeContext";
+import { CustomAlert } from "../common/CustomAlert";
 
 // Google Sign-In
 const GOOGLE_CLIENT_ID =
   "70657860851-4gh622q01j5uirrc2erd9mha36vnaija.apps.googleusercontent.com";
 
-// Custom Alert Component for Web
-const CustomAlert = ({ visible, type, title, message, onClose }) => {
-  if (!visible) return null;
-
-  const alertStyles = {
-    error: "bg-red-50 border-red-200 text-red-800",
-    warning: "bg-yellow-50 border-yellow-200 text-yellow-800",
-    success: "bg-green-50 border-green-200 text-green-800",
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md mx-4 shadow-xl">
-        <div className={`p-4 rounded-lg border ${alertStyles[type]} mb-4`}>
-          <h3 className="font-semibold mb-2">{title}</h3>
-          <p className="text-sm">{message}</p>
-        </div>
-        <button
-          onClick={onClose}
-          className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          OK
-        </button>
-      </div>
-    </div>
-  );
-};
-
-// Custom Input Component for Web
-const CustomInputWithIcon = ({
-  icon,
-  placeholder,
-  value,
-  onChange,
-  type = "text",
-  showPassword,
-  onTogglePassword,
-
-  onFocus,
-  onBlur,
-  autoCapitalize,
-}) => {
-  const IconComponent = icon === "mail" ? Mail : Lock;
-  return (
-    <div className="mb-6 flex flex-col items-center w-full">
-      <div className="relative w-full flex justify-center">
-        <span
-          className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none"
-          style={{ minWidth: 22 }}
-        >
-          <IconComponent
-            className="h-5 w-5 text-gray-400"
-            style={{ display: "block" }}
-          />
-        </span>
-        <input
-          type={type === "password" && !showPassword ? "password" : type}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onFocus={onFocus}
-          onBlur={onBlur}
-          autoCapitalize={autoCapitalize}
-          className={`peer rounded-md border border-[#e0e0e0] bg-[#181e29] text-white placeholder-transparent focus:ring-2 focus:ring-purple-400 focus:border-purple-400 py-3 px-10 text-base outline-none transition w-[340px] max-w-full`}
-          id={placeholder}
-        />
-        <label
-          htmlFor={placeholder}
-          className={`absolute left-10 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none transition-all duration-200 bg-transparent px-1
-            peer-focus:-top-2 peer-focus:text-xs peer-focus:text-purple-400
-            ${value ? "-top-2 text-xs text-purple-400" : ""}
-          `}
-          style={{ background: "#181e29" }}
-        >
-          {placeholder}
-        </label>
-        {type === "password" && (
-          <button
-            type="button"
-            className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center pr-5"
-            onClick={onTogglePassword}
-            tabIndex={-1}
-            style={{ height: "100%" }}
-          >
-            {showPassword ? (
-              <EyeOff
-                className="h-5 w-5 text-gray-400"
-                style={{ display: "block" }}
-              />
-            ) : (
-              <Eye
-                className="h-5 w-5 text-gray-400"
-                style={{ display: "block" }}
-              />
-            )}
-          </button>
-        )}
-      </div>
-    </div>
-  );
-};
+// CustomInputWithIcon is not used and removed
 
 // Google Sign-In Button Component
-const GoogleSignInButton = ({ onPress, loading }) => (
-  <button
-    type="button"
-    onClick={onPress}
-    disabled={loading}
-    className="w-full flex items-center justify-center px-4 py-3 rounded-md shadow bg-[#232b3b] border border-[#3a4256] text-white font-medium text-base focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mb-2"
-    style={{ minHeight: 48 }}
-  >
-    {loading ? (
-      <Loader2 className="animate-spin h-5 w-5 mr-2" />
-    ) : (
-      <FcGoogle className="h-6 w-6 mr-2" />
-    )}
-    {loading ? "Signing in..." : "Continue with Google"}
-  </button>
-);
+const GoogleSignInButton = ({ onPress, loading, themeColors }) => {
+  return (
+    <button
+      type="button"
+      onClick={onPress}
+      disabled={loading}
+      className="w-full flex items-center justify-center px-4 py-2 rounded-md shadow border text-white font-medium text-base focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mb-2"
+      style={{
+        minHeight: 40,
+        background: themeColors.surface || "#232b3b",
+        borderColor: themeColors.cardBorder || "#3a4256",
+        color: themeColors.text || "#fff",
+      }}
+    >
+      {loading ? (
+        <Loader2 className="animate-spin h-5 w-5 mr-2" />
+      ) : (
+        <FcGoogle className="h-6 w-6 mr-2" />
+      )}
+      {loading ? "Signing in..." : "Continue with Google"}
+    </button>
+  );
+};
 
 const Login = () => {
   const navigate = useNavigate();
@@ -138,8 +47,7 @@ const Login = () => {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isEmailFocused, setEmailFocused] = useState(false);
-  const [isPasswordFocused, setPasswordFocused] = useState(false);
+  // Removed unused focus states
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -316,16 +224,30 @@ const Login = () => {
   const { themeColors } = useTheme();
   return (
     <div
-      className="min-h-screen flex items-center justify-center bg-no-repeat bg-cover bg-center"
-      style={{ background: themeColors.background }}
+      className="min-h-screen flex items-center justify-center bg-no-repeat bg-cover bg-center w-full"
+      style={{
+        background:
+          themeColors.bg ||
+          "linear-gradient(135deg, #23272b 60%, #181c1f 100%)",
+      }}
     >
-      <div className="flex w-full max-w-5xl rounded-3xl overflow-hidden shadow-2xl bg-white dark:bg-gray-800">
+      <div
+        className="flex flex-row w-full max-w-6xl min-w-[700px] rounded-3xl overflow-hidden shadow-2xl mx-auto"
+        style={{
+          background:
+            themeColors.cardGlassBg ||
+            "linear-gradient(135deg, rgba(24,28,31,0.65) 60%, rgba(35,39,43,0.55) 100%)",
+          border: `1.5px solid ${
+            themeColors.cardBorder || "rgba(255,255,255,0.18)"
+          }`,
+          boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.15)",
+          WebkitBackdropFilter: "blur(18px)",
+          backdropFilter: "blur(18px)",
+        }}
+      >
         {/* Left: Form */}
-        <div className="flex-1 flex flex-col justify-center px-8 py-12 md:px-16 lg:px-20 xl:px-24">
-          <div
-            className="w-full max-w-md mx-auto pb-8"
-            style={{ marginLeft: 24 }}
-          >
+        <div className="flex-1 flex flex-col items-center justify-center px-10 py-10">
+          <div className="w-full max-w-md mx-auto pb-2 flex flex-col items-center">
             <h2
               className="text-4xl font-extrabold text-center mb-2 tracking-tight"
               style={{ color: themeColors.primary, letterSpacing: 1 }}
@@ -338,52 +260,104 @@ const Login = () => {
             >
               Welcome back! Please enter your details
             </p>
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3 w-full">
               <GoogleSignInButton
                 onPress={handleGoogleSignIn}
                 loading={isLoading}
+                themeColors={themeColors}
               />
-              <div className="flex items-center gap-2">
-                <div className="flex-grow h-px bg-[#3a4256]" />
-                <span className="text-sm text-[#a1a1aa]">Or</span>
-                <div className="flex-grow h-px bg-[#3a4256]" />
-              </div>
+              <hr className="my-4 border-t border-gray-600 w-full opacity-60" />
             </div>
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 handleLogin();
               }}
-              className="flex flex-col gap-0 mt-4 items-center"
+              className="flex flex-col gap-0 mt-2 items-center w-full"
+              style={{ alignItems: "center", justifyContent: "center" }}
             >
-              <CustomInputWithIcon
-                icon="mail"
-                placeholder="Email"
-                value={email}
-                onChange={setEmail}
-                type="email"
-                isFocused={isEmailFocused}
-                onFocus={() => setEmailFocused(true)}
-                onBlur={() => setEmailFocused(false)}
-                autoCapitalize="none"
-              />
-              <CustomInputWithIcon
-                icon="lock-closed"
-                placeholder="Password"
-                value={password}
-                onChange={setPassword}
-                type="password"
-                showPassword={showPassword}
-                onTogglePassword={() => setShowPassword(!showPassword)}
-                isFocused={isPasswordFocused}
-                onFocus={() => setPasswordFocused(true)}
-                onBlur={() => setPasswordFocused(false)}
-              />
-              <div className="flex justify-end w-[340px] max-w-full text-sm mb-4 ">
+              {/* Email Input */}
+              <div className="w-full mb-6">
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-semibold mb-2"
+                  style={{ color: themeColors.text }}
+                >
+                  Email
+                </label>
+                <div
+                  className="flex items-center px-4 py-3 rounded-xl border-2 transition-all duration-200 bg-opacity-80"
+                  style={{
+                    borderColor: themeColors.cardBorder,
+                    background: themeColors.inputBg,
+                  }}
+                >
+                  <Mail
+                    className="w-5 h-5 mr-3"
+                    style={{ color: themeColors.primary }}
+                  />
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    // onFocus and onBlur removed
+                    autoCapitalize="none"
+                    placeholder="Enter your email"
+                    className="flex-1 bg-transparent outline-none text-base font-medium"
+                    style={{ color: themeColors.text }}
+                  />
+                </div>
+              </div>
+              {/* Password Input */}
+              <div className="w-full mb-2">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-semibold mb-2"
+                  style={{ color: themeColors.text }}
+                >
+                  Password
+                </label>
+                <div
+                  className="flex items-center px-4 py-3 rounded-xl border-2 transition-all duration-200 bg-opacity-80"
+                  style={{
+                    borderColor: themeColors.cardBorder,
+                    background: themeColors.inputBg,
+                  }}
+                >
+                  <Lock
+                    className="w-5 h-5 mr-3"
+                    style={{ color: themeColors.primary }}
+                  />
+                  <input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    // onFocus and onBlur removed
+                    placeholder="Enter your password"
+                    className="flex-1 bg-transparent outline-none text-base font-medium"
+                    style={{ color: themeColors.text }}
+                  />
+                  <button
+                    type="button"
+                    className="ml-2"
+                    onClick={() => setShowPassword(!showPassword)}
+                    tabIndex={-1}
+                  >
+                    {showPassword ? (
+                      <Eye className="w-5 h-5 text-gray-400" />
+                    ) : (
+                      <EyeOff className="w-5 h-5 text-gray-400" />
+                    )}
+                  </button>
+                </div>
+              </div>
+              <div className="flex justify-end w-full text-sm mb-4 ">
                 <Link
                   to="/forgot-password"
-                  className="font-medium text-[#a259ff] hover:underline pr-1"
-                  style={{ letterSpacing: 0.2 }}
+                  className="font-medium"
+                  style={{ color: themeColors.primary, letterSpacing: 0.2 }}
                 >
                   forgot password ?
                 </Link>
@@ -391,32 +365,34 @@ const Login = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className={`w-[340px] max-w-full p-3 px-4 font-bold rounded-md shadow transition-colors bg-[#a259ff] hover:bg-[#7c3aed] text-white text-lg mt-2 mb-6 ${
-                  isLoading ? "animate-pulse" : ""
-                }`}
+                className="w-full py-3 px-6 rounded-xl font-semibold transition-all duration-200"
                 style={{
+                  background: themeColors.primary,
+                  color: themeColors.onPrimary,
                   boxShadow: "0 2px 8px 0 rgba(124,58,237,0.10)",
+                  opacity: isLoading ? 0.7 : 1,
+                  cursor: isLoading ? "wait" : "pointer",
                   letterSpacing: 0.5,
                 }}
               >
                 {isLoading ? (
-                  <Loader2 className="animate-spin h-5 w-5" />
+                  <div className="flex items-center justify-center">
+                    <Loader2 className="animate-spin h-5 w-5 mr-2" />
+                    <span>Logging in...</span>
+                  </div>
                 ) : (
-                  "Log in"
+                  <span>Log in</span>
                 )}
               </button>
             </form>
-            <div className="flex items-center gap-2 my-6">
-              <div className="flex-grow h-px bg-[#3a4256]" />
-              <span className="text-sm text-[#a1a1aa]">Or Continue With</span>
-              <div className="flex-grow h-px bg-[#3a4256]" />
-            </div>
-            <div className="text-center">
+            {/* Removed 'Or Continue With' and extra spacing below form */}
+            <div className="text-center mt-6">
               <span className="text-sm" style={{ color: themeColors.text }}>
                 Don't have an account?{" "}
                 <Link
                   to="/register"
-                  className="font-semibold text-[#ff6b35] hover:underline"
+                  className="font-semibold hover:underline"
+                  style={{ color: themeColors.primary }}
                 >
                   Sign up
                 </Link>
@@ -424,21 +400,27 @@ const Login = () => {
             </div>
           </div>
         </div>
+        {/* Vertical Divider */}
+        <div className="hidden md:flex items-center justify-center">
+          <div className="h-[70%] w-px bg-gray-500 opacity-30 mx-2" />
+        </div>
         {/* Right: Visual */}
-        <div className="hidden md:flex flex-1 items-center justify-center relative bg-gradient-to-tr from-transparent via-[rgba(124,58,237,0.10)] to-[rgba(124,58,237,0.20)]">
-          <div
-            className="absolute inset-0 z-0"
-            style={{
-              background:
-                "radial-gradient(circle at 60% 40%, #a78bfa33 60%, #c4b5fd99 100%)",
-              filter: "blur(0px)",
-            }}
-          />
+        <div className="hidden md:flex flex-1 items-center justify-center relative bg-transparent max-w-xl">
+          <style>{`
+            @keyframes floatY {
+              0% { transform: translateY(0); }
+              50% { transform: translateY(-18px); }
+              100% { transform: translateY(0); }
+            }
+          `}</style>
           <img
             src={fitnessImg}
             alt="Login Visual"
-            className="object-contain relative z-10 max-h-[60vh] drop-shadow-2xl rounded-2xl"
-            style={{ filter: "none" }}
+            className="object-contain relative z-10 max-h-[60vh] max-w-[420px] drop-shadow-2xl rounded-2xl"
+            style={{
+              filter: "none",
+              animation: "floatY 3.2s ease-in-out infinite",
+            }}
           />
         </div>
       </div>
@@ -448,6 +430,7 @@ const Login = () => {
         title={alertConfig.title}
         message={alertConfig.message}
         onClose={hideAlert}
+        themeColors={themeColors}
       />
     </div>
   );

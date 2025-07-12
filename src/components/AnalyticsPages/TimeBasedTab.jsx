@@ -38,34 +38,23 @@ const TimeBasedTab = ({
     setShowExportOptions(!showExportOptions);
   };
 
-  // Custom glassmorphic toggle switch component
+  // Custom glassmorphic toggle switch component (smaller)
   const ToggleSwitch = ({ checked, onChange }) => {
     return (
       <button
         onClick={() => onChange(!checked)}
         className={`
-          relative inline-flex h-9 w-20 items-center rounded-full shadow-lg border border-white/30
+          relative inline-flex h-6 w-12 items-center rounded-full shadow-lg border border-white/30
           transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2
           backdrop-blur-md
         `}
-        style={{
-          background: checked
-            ? `linear-gradient(90deg, ${themeColors.primary}33 0%, ${themeColors.primary}99 100%)`
-            : `linear-gradient(90deg, #f3f4f680 0%, #e5e7eb80 100%)`,
-          borderColor: checked ? `${themeColors.primary}55` : "#e5e7eb33",
-        }}
       >
         <span
           className={`
-            inline-block h-7 w-7 transform rounded-full shadow-md bg-white/90 border border-white/60
+            inline-block h-4 w-4 transform rounded-full shadow-md bg-white/90 border border-white/60
             transition-transform duration-300
-            ${checked ? "translate-x-11" : "translate-x-1"}
+            ${checked ? "translate-x-6" : "translate-x-1"}
           `}
-          style={{
-            boxShadow: checked
-              ? `0 2px 8px ${themeColors.primary}33`
-              : "0 2px 8px #e5e7eb33",
-          }}
         />
       </button>
     );
@@ -81,147 +70,74 @@ const TimeBasedTab = ({
         onDeviceChange={onDeviceChange}
       />
 
-      {/* Modern Glass-Style Toggle */}
+      {/* Modern Glass-Style Toggle & Export Button Side by Side */}
       <div className="px-4 mb-4">
-        <div
-          className={`relative rounded-2xl overflow-hidden shadow-xl border border-white/20 backdrop-blur-md`}
-          style={{
-            background: isDark
-              ? "linear-gradient(135deg, #23272f 0%, #181a20 100%)"
-              : `linear-gradient(135deg, #fff8 0%, #f3f4f6cc 100%)`,
-            borderColor: isDark ? "#23272f" : "#e5e7eb33",
-          }}
-        >
-          <div className="relative flex items-center justify-between px-5 py-5">
+        <div className="flex flex-row gap-3 items-center">
+          {/* Toggle Card (same size as export) */}
+          <div
+            className={`flex-1 min-w-0 h-16 rounded-2xl overflow-hidden shadow-xl border border-white/20 backdrop-blur-md bg-surface flex items-center justify-center px-2`}
+          >
             {/* Tissue Alerts Option */}
-            <div className="flex items-center justify-center flex-1">
+            <div className="flex flex-row items-center justify-center flex-1 min-w-0 gap-2">
               <div
-                className={`w-11 h-11 rounded-full flex items-center justify-center mr-3 transition-all duration-200 shadow-md border border-white/30 backdrop-blur-sm`}
-                style={{
-                  background:
-                    alertType === "tissue"
-                      ? `linear-gradient(135deg, ${themeColors.primary}22 0%, #fff4 100%)`
-                      : "transparent",
-                  borderColor:
-                    alertType === "tissue"
-                      ? `${themeColors.primary}55`
-                      : "#e5e7eb33",
-                }}
+                className={`w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200 shadow-md border border-white/30 backdrop-blur-sm text-primary`}
               >
-                <IoWater
-                  size={26}
-                  color={
-                    alertType === "tissue"
-                      ? themeColors.primary
-                      : `${themeColors.text}66`
-                  }
-                />
+                <IoWater size={18} />
               </div>
               <span
-                className={`text-base tracking-tight text-center ${
+                className={`text-xs tracking-tight text-primary ${
                   alertType === "tissue" ? "font-extrabold" : "font-semibold"
                 }`}
-                style={{
-                  color:
-                    alertType === "tissue"
-                      ? themeColors.primary
-                      : `${themeColors.text}99`,
-                }}
               >
-                Tissue Alerts
+                Tissue
               </span>
             </div>
-
             {/* Toggle Switch */}
-            <div className="px-5 flex items-center justify-center">
+            <div className="px-2 flex items-center justify-center">
               <ToggleSwitch
                 checked={alertType === "battery"}
                 onChange={(val) => setAlertType(val ? "battery" : "tissue")}
               />
             </div>
-
             {/* Battery Alerts Option */}
-            <div className="flex items-center justify-center flex-1">
+            <div className="flex flex-row items-center justify-center flex-1 min-w-0 gap-2">
               <div
-                className={`w-11 h-11 rounded-full flex items-center justify-center mr-3 transition-all duration-200 shadow-md border border-white/30 backdrop-blur-sm`}
-                style={{
-                  background:
-                    alertType === "battery"
-                      ? `linear-gradient(135deg, ${themeColors.primary}22 0%, #fff4 100%)`
-                      : "transparent",
-                  borderColor:
-                    alertType === "battery"
-                      ? `${themeColors.primary}55`
-                      : "#e5e7eb33",
-                }}
+                className={`w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200 shadow-md border border-white/30 backdrop-blur-sm text-primary`}
               >
-                <IoBatteryChargingOutline
-                  size={24}
-                  color={
-                    alertType === "battery"
-                      ? themeColors.primary
-                      : `${themeColors.text}66`
-                  }
-                />
+                <IoBatteryChargingOutline size={18} />
               </div>
               <span
-                className={`text-base tracking-tight text-center ${
+                className={`text-xs tracking-tight text-primary ${
                   alertType === "battery" ? "font-extrabold" : "font-semibold"
                 }`}
-                style={{
-                  color:
-                    alertType === "battery"
-                      ? themeColors.primary
-                      : `${themeColors.text}99`,
-                }}
               >
-                Battery Alerts
+                Battery
               </span>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Modern Glass-Style Export Button */}
-      <div className="px-4 mb-3">
-        <button
-          className={`relative w-full rounded-2xl overflow-hidden shadow-xl border border-white/20 backdrop-blur-md transition-all duration-300 hover:shadow-2xl`}
-          style={{
-            background: isDark
-              ? "linear-gradient(135deg, #23272f 0%, #181a20 100%)"
-              : `linear-gradient(135deg, ${themeColors.primary}11 0%, #fff8 100%)`,
-            borderColor: isDark ? "#23272f" : `${themeColors.primary}33`,
-          }}
-          onClick={handleToggleExport}
-        >
-          <div className="relative flex items-center justify-center px-5 py-4">
-            <div
-              className="w-14 h-14 rounded-full flex items-center justify-center mr-4 shadow-md border border-white/30 backdrop-blur-sm"
-              style={{ background: `${themeColors.primary}18` }}
-            >
-              <HiOutlineDownload size={28} color={themeColors.primary} />
+          {/* Export Button Card (same size as toggle) */}
+          <button
+            className={`flex-1 min-w-0 h-16 rounded-2xl overflow-hidden shadow-xl border border-white/20 backdrop-blur-md bg-surface transition-all duration-300 hover:shadow-2xl flex items-center px-2`}
+            onClick={handleToggleExport}
+          >
+            <div className="w-7 h-7 rounded-full flex items-center justify-center mr-4 shadow-md border border-white/30 backdrop-blur-sm text-primary">
+              <HiOutlineDownload size={20} />
             </div>
-            <div className="flex-1 text-center">
-              <h3
-                className="text-lg font-extrabold tracking-tight mb-0.5"
-                style={{ color: themeColors.heading }}
-              >
-                {showExportOptions ? "Hide Export Options" : "Export Data"}
-              </h3>
-              <p
-                className="text-xs font-medium opacity-80"
-                style={{ color: `${themeColors.text}99` }}
-              >
-                Download analytics in various formats
-              </p>
+            <div className="flex-1 flex flex-col justify-center text-left gap-0.5">
+              <span className="text-xs font-extrabold tracking-tight text-primary">
+                {showExportOptions ? "Hide Export" : "Export Data"}
+              </span>
+              <span className="block text-[10px] font-medium opacity-80 text-primary">
+                Download analytics
+              </span>
             </div>
             {showExportOptions ? (
-              <HiChevronUp size={22} color={themeColors.primary} />
+              <HiChevronUp size={22} className="text-primary ml-2" />
             ) : (
-              <HiChevronDown size={22} color={themeColors.primary} />
+              <HiChevronDown size={22} className="text-primary ml-2" />
             )}
-          </div>
-        </button>
+          </button>
+        </div>
       </div>
 
       {/* Show Download Buttons only when export is toggled */}

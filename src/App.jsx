@@ -1,3 +1,4 @@
+import ChangePassword from "./components/auth/ChangePassword";
 import React from "react";
 import {
   BrowserRouter as Router,
@@ -20,15 +21,17 @@ import RootRedirect from "./components/common/RootRedirect";
 
 // Admin Components
 import AdminDashboard from "./components/admin/AdminDashboard";
-import AdminSettings from "./components/admin/AdminSettings";
+import AdminProfile from "./components/Profile/AdminProfile";
 import UserManagement from "./components/admin/UserManagement";
+import AppLogs from "./components/Logs/AppLogs";
 
 // Page Components
 import Devices from "./components/Devices";
-import Analytics from "./components/AnalyticsPages/Analytics"
+import Analytics from "./components/AnalyticsPages/Analytics";
 // import Reports from "./components/Reports";
 import Settings from "./components/Settings";
 import DeviceSummaryPage from "./components/Devices/DeviceSummaryPage";
+import Contact from "./components/admin/Contact";
 
 const App = () => {
   return (
@@ -104,17 +107,17 @@ const App = () => {
                 }
               />
 
-              {/* Reports */}
-              {/* <Route
-                path="/admin/reports"
+              {/* Logs */}
+              <Route
+                path="/admin/logs"
                 element={
                   <ProtectedRoute>
                     <AdminLayout>
-                      <Reports />
+                      <AppLogs />
                     </AdminLayout>
                   </ProtectedRoute>
                 }
-              /> */}
+              />
 
               {/* Settings */}
               <Route
@@ -128,14 +131,46 @@ const App = () => {
                 }
               />
 
-              {/* Admin Account Settings */}
+              {/* Admin Profile */}
               <Route
-                path="/admin/account"
+                path="/admin/profile"
                 element={
                   <ProtectedRoute>
                     <AdminLayout>
-                      <AdminSettings />
+                      <AdminProfile />
                     </AdminLayout>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Change Password */}
+              <Route
+                path="/change-password"
+                element={
+                  <ProtectedRoute>
+                    <ChangePassword />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Admin Contact (Help & Support) */}
+              <Route
+                path="/admin/contact"
+                element={
+                  <ProtectedRoute>
+                    <AdminLayout>
+                      <Contact />
+                    </AdminLayout>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* (Optional) Keep /contact route for non-admin use, or remove if not needed */}
+              <Route
+                path="/contact"
+                element={
+                  <ProtectedRoute>
+                    <Contact />
                   </ProtectedRoute>
                 }
               />

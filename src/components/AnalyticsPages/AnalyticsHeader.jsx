@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { HiCalendar, HiX } from "react-icons/hi";
-import { useTheme } from "../../hooks/useThemeContext"
+import { useTheme } from "../../hooks/useThemeContext";
 import { format, subDays, startOfDay, endOfDay } from "date-fns";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
@@ -30,11 +30,20 @@ const AnalyticsHeader = ({ onDateRangeChange, selectedDateRange }) => {
   };
 
   const handleCalendarDaySelect = (date) => {
-    if (date) {
-      if (calendarType === "start") {
-        setStartDate(date);
-      } else if (calendarType === "end") {
+    if (!date) return;
+    if (calendarType === "start") {
+      setStartDate(date);
+      // If start date is after end date, reset end date to start date
+      if (date > endDate) {
         setEndDate(date);
+      }
+      // After picking start, immediately open end calendar for smoother UX
+      setCalendarType("end");
+    } else if (calendarType === "end") {
+      setEndDate(date);
+      // If end date is before start date, reset start date to end date
+      if (date < startDate) {
+        setStartDate(date);
       }
       closeCalendar();
     }
@@ -78,20 +87,24 @@ const AnalyticsHeader = ({ onDateRangeChange, selectedDateRange }) => {
   const calendarStyles = `
     .rdp {
       --rdp-cell-size: 40px;
-      --rdp-accent-color: ${themeColors.primary};
+      --rdp-accent-color: ${themeColors.primary} !important;
       --rdp-background-color: ${themeColors.surface};
       margin: 0;
     }
     .rdp-day_selected:not([disabled]) {
-      background-color: ${themeColors.primary};
-      color: white;
+      background-color: ${themeColors.primary} !important;
+      color: white !important;
+      border: 2px solid ${themeColors.primary} !important;
     }
     .rdp-day_selected:hover:not([disabled]) {
-      background-color: ${themeColors.primary};
+      background-color: ${themeColors.primary} !important;
       opacity: 0.9;
+      border: 2px solid ${themeColors.primary} !important;
     }
     .rdp-day:hover:not([disabled]):not(.rdp-day_selected) {
-      background-color: ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'};
+      background-color: ${
+        isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)"
+      };
     }
     .rdp-caption {
       color: ${themeColors.heading};
@@ -104,10 +117,27 @@ const AnalyticsHeader = ({ onDateRangeChange, selectedDateRange }) => {
       color: ${themeColors.text};
     }
     .rdp-day_disabled {
-      color: ${isDark ? '#4B5563' : '#D1D5DB'};
+      color: ${isDark ? "#4B5563" : "#D1D5DB"};
     }
-    .rdp-button:hover:not([disabled]) {
-      background-color: ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'};
+    .rdp-button, .rdp-nav_button {
+      color: ${themeColors.primary} !important;
+      fill: ${themeColors.primary} !important;
+      stroke: ${themeColors.primary} !important;
+    }
+    .rdp-button:hover:not([disabled]), .rdp-nav_button:hover:not([disabled]) {
+      background-color: ${
+        isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)"
+      };
+      color: ${themeColors.primary} !important;
+      fill: ${themeColors.primary} !important;
+      stroke: ${themeColors.primary} !important;
+    }
+    .rdp-nav_button:focus {
+      outline: 2px solid ${themeColors.primary} !important;
+    }
+    .rdp-day_today:not(.rdp-day_selected) {
+      border: 1.5px dashed ${themeColors.primary} !important;
+      color: ${themeColors.primary} !important;
     }
   `;
 
@@ -220,8 +250,10 @@ const AnalyticsHeader = ({ onDateRangeChange, selectedDateRange }) => {
             className="rounded-3xl shadow-2xl"
             style={{ backgroundColor: themeColors.surface }}
           >
-            <div className="p-4 flex justify-between items-center border-b"
-                 style={{ borderColor: themeColors.border }}>
+            <div
+              className="p-4 flex justify-between items-center border-b"
+              style={{ borderColor: themeColors.border }}
+            >
               <h3
                 className="text-lg font-bold"
                 style={{ color: themeColors.heading }}
@@ -246,6 +278,13 @@ const AnalyticsHeader = ({ onDateRangeChange, selectedDateRange }) => {
                 className="rounded-xl"
                 showOutsideDays={false}
                 fixedWeeks
+                toDate={new Date()}
+                fromDate={calendarType === "end" ? startDate : undefined}
+                disabled={
+                  calendarType === "start"
+                    ? (day) => day > new Date()
+                    : (day) => day < startDate || day > new Date()
+                }
               />
             </div>
           </div>

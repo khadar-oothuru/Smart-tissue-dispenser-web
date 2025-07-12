@@ -17,13 +17,13 @@ class AdminService {
   }
 
   // Helper to get auth headers
-  getAuthHeaders() {
+  getAuthHeaders(contentType = "application/json") {
     if (!this.authContext?.accessToken) {
       throw new Error("No access token available");
     }
     return {
       Authorization: `Bearer ${this.authContext.accessToken}`,
-      "Content-Type": "application/json",
+      ...(contentType && { "Content-Type": contentType }),
     };
   }
 
@@ -34,6 +34,7 @@ class AdminService {
       error.response?.data?.message ||
       error.response?.data?.error ||
       error.response?.data?.detail ||
+      error.response?.data?.username?.[0] ||
       error.message ||
       defaultMessage;
     throw new Error(message);
@@ -50,6 +51,23 @@ class AdminService {
       return response.data;
     } catch (error) {
       this.handleError(error, "Failed to fetch users");
+    }
+  }
+
+  // Fetch user by ID (NEW from mobile)
+  async fetchUserById(userId) {
+    try {
+      console.log(`AdminService: Fetching user ${userId}...`);
+      const response = await axios.get(
+        `${this.baseURL}/auth/admin/users/${userId}/`,
+        {
+          headers: this.getAuthHeaders(),
+        }
+      );
+      console.log("AdminService: User fetched successfully:", response.data);
+      return response.data;
+    } catch (error) {
+      this.handleError(error, "Failed to fetch user");
     }
   }
 
@@ -158,7 +176,9 @@ class AdminService {
   // Update user role
   async updateUserRole(userId, newRole) {
     try {
-      console.log(`AdminService: Updating user ${userId} role to ${newRole}...`);
+      console.log(
+        `AdminService: Updating user ${userId} role to ${newRole}...`
+      );
       const response = await axios.patch(
         `${this.baseURL}/auth/admin/users/${userId}/role/`,
         { role: newRole },
@@ -173,20 +193,114 @@ class AdminService {
     }
   }
 
-  // Fetch app logs
-  async fetchAppLogs(page = 1, limit = 50) {
+  // Fetch app logs (updated to match mobile version)
+  async fetchLogs() {
     try {
       console.log("AdminService: Fetching app logs...");
+      const response = await axios.get(`${this.baseURL}/auth/admin/logs/`, {
+        headers: this.getAuthHeaders(),
+      });
+      console.log("AdminService: App logs fetched successfully");
+      // Return the results array from the paginated response
+      const logs = response.data.results || response.data || [];
+      return logs;
+    } catch (error) {
+      this.handleError(error, "Failed to fetch app logs");
+    }
+  }
+
+  // Fetch logs by level (NEW from mobile)
+  async fetchLogsByLevel(level) {
+    try {
+      console.log(`AdminService: Fetching logs by level: ${level}...`);
       const response = await axios.get(
-        `${this.baseURL}/auth/admin/logs/?page=${page}&limit=${limit}`,
+        `${this.baseURL}/auth/admin/logs/level/${level}/`,
         {
           headers: this.getAuthHeaders(),
         }
       );
-      console.log("AdminService: App logs fetched successfully");
+      return response.data.results || response.data || [];
+    } catch (error) {
+      this.handleError(error, "Failed to fetch logs by level");
+    }
+  }
+
+  // Fetch logs by date range (NEW from mobile)
+  async fetchLogsByDateRange(startDate, endDate) {
+    try {
+      console.log("AdminService: Fetching logs by date range...");
+      const response = await axios.get(
+        `${this.baseURL}/auth/admin/logs/?start_date=${startDate}&end_date=${endDate}`,
+        {
+          headers: this.getAuthHeaders(),
+        }
+      );
+      return response.data.results || response.data || [];
+    } catch (error) {
+      this.handleError(error, "Failed to fetch logs by date range");
+    }
+  }
+
+  // Fetch logs statistics (NEW from mobile)
+  async fetchLogsStats() {
+    try {
+      console.log("AdminService: Fetching logs stats...");
+      const response = await axios.get(
+        `${this.baseURL}/auth/admin/logs/stats/`,
+        {
+          headers: this.getAuthHeaders(),
+        }
+      );
       return response.data;
     } catch (error) {
-      this.handleError(error, "Failed to fetch app logs");
+      this.handleError(error, "Failed to fetch logs statistics");
+    }
+  }
+
+  // Create log (NEW from mobile)
+  async createLog(logData) {
+    try {
+      console.log("AdminService: Creating log...");
+      const response = await axios.post(
+        `${this.baseURL}/auth/admin/logs/create/`,
+        logData,
+        {
+          headers: this.getAuthHeaders(),
+        }
+      );
+      console.log("AdminService: Log created successfully");
+      return response.data;
+    } catch (error) {
+      this.handleError(error, "Failed to create log");
+    }
+  }
+
+  // Download/Export logs (NEW from mobile)
+  async downloadLogs(format = "csv", filters = {}) {
+    try {
+      let endpoint = "/auth/admin/logs/export/csv/";
+      if (format === "json") endpoint = "/auth/admin/logs/export/json/";
+      if (format === "pdf") endpoint = "/auth/admin/logs/export/pdf/";
+
+      // Build query string from filters
+      const params = new URLSearchParams();
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) params.append(key, value);
+      });
+
+      const url = `${this.baseURL}${endpoint}${
+        params.toString() ? "?" + params.toString() : ""
+      }`;
+
+      console.log(`AdminService: Downloading logs as ${format}...`);
+      const response = await axios.get(url, {
+        headers: this.getAuthHeaders(),
+        responseType: format === "pdf" ? "arraybuffer" : "text",
+      });
+
+      return response.data;
+    } catch (error) {
+      this.handleError(error, "Failed to download logs");
     }
   }
 
@@ -194,6 +308,12 @@ class AdminService {
   async updateAdminProfile(profileData) {
     try {
       console.log("AdminService: Updating admin profile...");
+
+      // Validate that we have actual data to update
+      if (!profileData || Object.keys(profileData).length === 0) {
+        throw new Error("No profile data provided for update");
+      }
+
       const response = await axios.patch(
         `${this.baseURL}/auth/admin/profile/`,
         profileData,
@@ -205,6 +325,105 @@ class AdminService {
       return response.data;
     } catch (error) {
       this.handleError(error, "Failed to update admin profile");
+    }
+  }
+
+  // Upload profile picture (NEW from mobile)
+  async uploadProfilePicture(imageFile) {
+    try {
+      console.log("AdminService: Uploading profile picture...");
+
+      // Validate image file
+      if (!imageFile) {
+        throw new Error("No image file provided");
+      }
+
+      const formData = new FormData();
+      formData.append("image", imageFile);
+
+      const response = await axios.post(
+        `${this.baseURL}/auth/user/upload-picture/`,
+        formData,
+        {
+          headers: this.getAuthHeaders("multipart/form-data"),
+        }
+      );
+
+      console.log("AdminService: Profile picture uploaded successfully");
+      return response.data;
+    } catch (error) {
+      this.handleError(error, "Failed to upload profile picture");
+    }
+  }
+
+  // Password change methods (NEW from mobile)
+  async sendPasswordChangeOTP() {
+    try {
+      console.log("AdminService: Sending password change OTP...");
+      const response = await axios.post(
+        `${this.baseURL}/auth/user/send-change-password-otp/`,
+        {},
+        {
+          headers: this.getAuthHeaders(),
+        }
+      );
+      console.log("AdminService: OTP sent successfully");
+      return response.data;
+    } catch (error) {
+      this.handleError(error, "Failed to send OTP");
+    }
+  }
+
+  async verifyPasswordChangeOTP(otp) {
+    try {
+      console.log("AdminService: Verifying password change OTP...");
+      const response = await axios.post(
+        `${this.baseURL}/auth/user/verify-password-change-otp/`,
+        { otp },
+        {
+          headers: this.getAuthHeaders(),
+        }
+      );
+      console.log("AdminService: OTP verified successfully");
+      return response.data;
+    } catch (error) {
+      this.handleError(error, "Failed to verify OTP");
+    }
+  }
+
+  async changePasswordWithOTP(oldPassword, newPassword, otp) {
+    try {
+      console.log("AdminService: Changing password with OTP...");
+      const response = await axios.post(
+        `${this.baseURL}/auth/user/change-password-with-otp/`,
+        {
+          old_password: oldPassword,
+          new_password: newPassword,
+          otp: otp,
+        },
+        {
+          headers: this.getAuthHeaders(),
+        }
+      );
+      console.log("AdminService: Password changed successfully");
+      return response.data;
+    } catch (error) {
+      this.handleError(error, "Failed to change password");
+    }
+  }
+
+  // Test authentication (NEW from mobile - useful for debugging)
+  async testAuth() {
+    try {
+      console.log("AdminService: Testing authentication...");
+      const response = await axios.get(`${this.baseURL}/auth/admin/profile/`, {
+        headers: this.getAuthHeaders(),
+      });
+      console.log("AdminService: Authentication test successful");
+      return response.data;
+    } catch (error) {
+      console.error("AdminService: Authentication test failed:", error);
+      throw error;
     }
   }
 }

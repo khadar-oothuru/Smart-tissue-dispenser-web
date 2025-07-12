@@ -1,6 +1,6 @@
-import React from 'react';
-import { User, Shield, Trash2, UserCog } from 'lucide-react';
-import { useTheme } from '../../context/ThemeContext';
+import React from "react";
+import { User, Shield, Trash2, UserCog } from "lucide-react";
+import { useTheme } from "../../context/ThemeContext";
 
 const UserItem = ({ user, onRoleChange, onDelete, onViewProfile }) => {
   const { themeColors } = useTheme();
@@ -12,7 +12,16 @@ const UserItem = ({ user, onRoleChange, onDelete, onViewProfile }) => {
   }, [user?.id]);
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5 mb-4 shadow-sm hover:shadow-md transition-shadow duration-200">
+    <div
+      className="rounded-3xl border shadow-2xl backdrop-blur-xl p-6 flex flex-col justify-between transition-all duration-200 hover:scale-[1.02]"
+      style={{
+        background: themeColors.glassCardBg || "rgba(40,40,60,0.45)",
+        borderColor: themeColors.glassBorder || "rgba(200,200,255,0.18)",
+        boxShadow:
+          themeColors.glassShadow || "0 8px 32px 0 rgba(31, 38, 135, 0.18)",
+        minHeight: 180,
+      }}
+    >
       <div className="flex items-center">
         {/* Avatar */}
         <div className="relative mr-4">
@@ -20,29 +29,57 @@ const UserItem = ({ user, onRoleChange, onDelete, onViewProfile }) => {
             <img
               src={user.profile_picture}
               alt={user.full_name || user.username}
-              className="w-14 h-14 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700"
+              className="w-14 h-14 rounded-full object-cover border-2"
+              style={{ borderColor: themeColors.inputBorder || "#444" }}
               onError={() => setImageError(true)}
             />
           ) : (
-            <div className="w-14 h-14 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-              <User className="h-6 w-6 text-gray-400 dark:text-gray-500" />
+            <div
+              className="w-14 h-14 rounded-full flex items-center justify-center"
+              style={{
+                background: themeColors.inputBg || "rgba(255,255,255,0.18)",
+              }}
+            >
+              <User
+                className="h-6 w-6"
+                style={{ color: themeColors.inputIcon || "#b0b8c1" }}
+              />
             </div>
           )}
-          <div 
-            className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-gray-800 ${user.is_active ? 'bg-green-500' : 'bg-red-500'}`}
+          <div
+            className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2"
+            style={{
+              background: user.is_active
+                ? themeColors.success || "#22c55e"
+                : themeColors.error || "#ef4444",
+              borderColor: themeColors.glassCardBg || "#fff",
+            }}
           />
         </div>
 
         {/* User Details */}
         <div className="flex-1">
           <div className="flex justify-between items-start mb-1">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <h3
+              className="text-lg font-semibold"
+              style={{ color: themeColors.text || "#fff" }}
+            >
               {user.full_name || user.username}
             </h3>
-            <span 
-              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${user.role === 'admin' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'}`}
+            <span
+              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+              style={{
+                background:
+                  user.role === "admin"
+                    ? themeColors.roleAdminBg || "rgba(120, 80, 220, 0.18)"
+                    : themeColors.roleUserBg || "rgba(0, 122, 255, 0.18)",
+                color:
+                  user.role === "admin"
+                    ? themeColors.roleAdminText || "#a78bfa"
+                    : themeColors.roleUserText || "#60a5fa",
+              }}
             >
-              {user.role === 'admin' ? (
+              {user.role === "admin" ? (
                 <Shield className="h-3 w-3 mr-1" />
               ) : (
                 <User className="h-3 w-3 mr-1" />
@@ -50,9 +87,19 @@ const UserItem = ({ user, onRoleChange, onDelete, onViewProfile }) => {
               {user.role.toUpperCase()}
             </span>
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{user.email}</p>
-          <p className="text-xs text-gray-400 dark:text-gray-500">
-            Joined {user.date_joined_formatted || new Date(user.date_joined).toLocaleDateString()}
+          <p
+            className="text-sm mb-1"
+            style={{ color: themeColors.textSecondary || "#b0b8c1" }}
+          >
+            {user.email}
+          </p>
+          <p
+            className="text-xs"
+            style={{ color: themeColors.textTertiary || "#8a8a8a" }}
+          >
+            Joined{" "}
+            {user.date_joined_formatted ||
+              new Date(user.date_joined).toLocaleDateString()}
           </p>
         </div>
 
@@ -60,21 +107,33 @@ const UserItem = ({ user, onRoleChange, onDelete, onViewProfile }) => {
         <div className="flex flex-col space-y-2 ml-4">
           <button
             onClick={() => onViewProfile(user)}
-            className="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-colors duration-200"
+            className="p-2 rounded-full transition-colors duration-200 shadow-md"
+            style={{
+              background: themeColors.actionViewBg || "#2563eb",
+              color: themeColors.actionViewText || "#fff",
+            }}
             title="View Profile"
           >
             <User className="h-4 w-4" />
           </button>
           <button
             onClick={() => onRoleChange(user)}
-            className="p-2 bg-amber-500 hover:bg-amber-600 text-white rounded-full transition-colors duration-200"
+            className="p-2 rounded-full transition-colors duration-200 shadow-md"
+            style={{
+              background: themeColors.actionRoleBg || "#f59e42",
+              color: themeColors.actionRoleText || "#fff",
+            }}
             title="Change Role"
           >
             <UserCog className="h-4 w-4" />
           </button>
           <button
             onClick={() => onDelete(user)}
-            className="p-2 bg-red-500 hover:bg-red-600 text-white rounded-full transition-colors duration-200"
+            className="p-2 rounded-full transition-colors duration-200 shadow-md"
+            style={{
+              background: themeColors.actionDeleteBg || "#ef4444",
+              color: themeColors.actionDeleteText || "#fff",
+            }}
             title="Delete User"
           >
             <Trash2 className="h-4 w-4" />

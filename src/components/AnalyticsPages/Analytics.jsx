@@ -18,7 +18,7 @@ import { subDays, startOfDay, endOfDay } from "date-fns";
 import AnalyticsHeader from "./AnalyticsHeader";
 import TimeBasedTab from "./TimeBasedTab";
 import ErrorMessage from "../../components/common/ErrorMessage";
-import LoadingSpinner from "../../components/common/LoadingSpinner";
+import Spinner from "../../components/common/Spinner";
 import { CustomAlert, DownloadOptionsAlert } from "../common/CustomAlert";
 
 const showToast = (message) => {
@@ -472,7 +472,7 @@ export default function Analytics() {
         style={{ backgroundColor: themeColors.background }}
       >
         <div className="text-center">
-          <LoadingSpinner size="w-12 h-12" color={themeColors.primary} />
+          <Spinner size={48} color={themeColors.primary} className="mx-auto" />
           <p
             className="mt-4 text-lg font-medium"
             style={{ color: themeColors.text }}
@@ -491,10 +491,34 @@ export default function Analytics() {
     <div className="relative flex flex-col h-full">
       <div className="flex-1 overflow-hidden">
         <div
-          className="h-full overflow-y-auto pt-5"
-          style={{ backgroundColor: themeColors.background }}
+          className="h-full pt-5 hide-scrollbar"
+          style={{
+            backgroundColor: themeColors.background,
+            scrollbarWidth: "none", // Firefox
+            msOverflowStyle: "none", // IE 10+
+            overflowY: "auto",
+            overflowX: "hidden", // Hide horizontal scrollbar
+          }}
         >
           <div className="pb-20 md:pb-16">
+            <style>{`
+              .hide-scrollbar {
+                scrollbar-width: none !important; /* Firefox */
+                -ms-overflow-style: none !important; /* IE and Edge */
+              }
+              .hide-scrollbar::-webkit-scrollbar {
+                display: none !important; /* Chrome, Safari, Opera */
+              }
+              /* Hide scrollbars for chart container specifically */
+              .chart-scrollbar-hidden {
+                overflow-x: hidden !important;
+                scrollbar-width: none !important;
+                -ms-overflow-style: none !important;
+              }
+              .chart-scrollbar-hidden::-webkit-scrollbar {
+                display: none !important;
+              }
+            `}</style>
             <AnalyticsHeader
               onDateRangeChange={handleDateRangeChange}
               selectedDateRange={selectedDateRange}
@@ -502,7 +526,7 @@ export default function Analytics() {
               isLoading={analyticsLoading}
             />
 
-            <div className="relative z-0">
+            <div className="relative z-0 chart-scrollbar-hidden">
               <TimeBasedTab
                 key={`${selectedPeriod}_${selectedDevice}_${selectedDateRange?.label}_${dataUpdateCounter}`}
                 timeBasedData={timeBasedData || {}}

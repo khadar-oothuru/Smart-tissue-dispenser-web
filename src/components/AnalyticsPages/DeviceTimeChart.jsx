@@ -182,9 +182,9 @@ const DeviceTimeChart = ({ deviceData, alertType = "tissue" }) => {
       className="mx-4 mb-6 rounded-3xl overflow-hidden shadow-2xl border border-white/20 backdrop-blur-md relative"
       style={{
         background: isDark
-          ? "linear-gradient(135deg, #23272f 0%, #181a20 100%)"
-          : "linear-gradient(135deg, #fff8 0%, #f3f4f6cc 100%)",
-        borderColor: isDark ? "#23272f" : "#e5e7eb33",
+          ? themeColors.surface || themeColors.card
+          : themeColors.surface || "#fff",
+        borderColor: isDark ? themeColors.border : "#e5e7eb33",
       }}
     >
       {/* Device Header */}
@@ -221,18 +221,23 @@ const DeviceTimeChart = ({ deviceData, alertType = "tissue" }) => {
               {(() => {
                 const chartData = getAlertTrendsData();
                 return (
-                  <AreaLineChart
-                    data={chartData}
-                    title={
-                      alertType === "battery"
-                        ? "Battery Alert Trends"
-                        : "Tissue Alert Trends"
-                    }
-                    showPrediction={true}
-                    showHighestReach={true}
-                    scrollable={true}
-                    formatLabel={(label, idx) => label}
-                  />
+                  <div
+                    className="rounded-3xl p-2 mb-2"
+                    style={{ background: "transparent" }}
+                  >
+                    <AreaLineChart
+                      data={chartData}
+                      title={
+                        alertType === "battery"
+                          ? "Battery Alert Trends"
+                          : "Tissue Alert Trends"
+                      }
+                      showPrediction={true}
+                      showHighestReach={true}
+                      scrollable={true}
+                      formatLabel={(label, idx) => label}
+                    />
+                  </div>
                 );
               })()}
 
@@ -247,22 +252,27 @@ const DeviceTimeChart = ({ deviceData, alertType = "tissue" }) => {
                         {chartData.macros.map((macro, index) => (
                           <div
                             key={index}
-                            className="relative flex flex-col items-center py-4 px-3 rounded-2xl border border-white/30 shadow-md backdrop-blur-sm"
+                            className="relative flex flex-col items-center py-2 px-2 rounded-xl border shadow-md backdrop-blur-[8px]"
                             style={{
                               background: isDark
-                                ? "linear-gradient(135deg, #23272f 0%, #181a20 100%)"
-                                : `linear-gradient(135deg, ${macro.color}11 0%, #fff8 100%)`,
+                                ? "rgba(35, 39, 47, 0.32)"
+                                : "rgba(255, 255, 255, 0.32)",
                               borderColor: isDark
-                                ? "#23272f"
-                                : `${macro.color}33`,
+                                ? "rgba(255,255,255,0.08)"
+                                : `${macro.color}18`,
+                              boxShadow: isDark
+                                ? "0 2px 10px 0 rgba(0,0,0,0.18)"
+                                : "0 2px 10px 0 rgba(180,180,255,0.07)",
+                              backdropFilter: "blur(8px)",
+                              WebkitBackdropFilter: "blur(8px)",
                             }}
                           >
                             <div
-                              className="w-4 h-4 rounded-full mb-2.5 shadow-sm relative border border-white/40"
+                              className="w-2.5 h-2.5 rounded-full mb-1 shadow-sm relative border border-white/40"
                               style={{ backgroundColor: macro.color }}
                             />
                             <span
-                              className="text-2xl font-extrabold mb-1 tracking-tighter relative"
+                              className="text-base font-extrabold mb-0.5 tracking-tighter relative"
                               style={{
                                 color: isDark
                                   ? themeColors.heading
@@ -272,7 +282,7 @@ const DeviceTimeChart = ({ deviceData, alertType = "tissue" }) => {
                               {macro.value}
                             </span>
                             <span
-                              className="text-xs font-semibold text-center opacity-90 relative"
+                              className="text-[9px] font-semibold text-center opacity-90 relative"
                               style={{ color: themeColors.text }}
                             >
                               {macro.name}

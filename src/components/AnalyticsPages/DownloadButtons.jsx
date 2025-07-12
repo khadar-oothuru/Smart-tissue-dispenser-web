@@ -139,11 +139,6 @@ const DownloadButtons = ({ onDownload, isLoading, downloading, cancelled }) => {
           className={`
             relative w-full py-3.5 px-4 rounded-xl border overflow-hidden
             shadow-sm transition-all duration-200 min-h-[52px]
-            ${
-              isDark
-                ? "bg-gray-800 hover:bg-gray-750"
-                : "bg-white hover:bg-gray-50"
-            }
             ${isThisButtonBusy ? "border-2" : "border"}
             ${
               isAnyActive && !isThisButtonBusy
@@ -152,6 +147,7 @@ const DownloadButtons = ({ onDownload, isLoading, downloading, cancelled }) => {
             }
           `}
           style={{
+            background: themeColors.surface,
             borderColor: isThisButtonBusy
               ? gradientColors[1]
               : isDark
@@ -228,20 +224,21 @@ const DownloadButtons = ({ onDownload, isLoading, downloading, cancelled }) => {
 
   return (
     <div
-      className={`mx-4 mb-5 rounded-2xl overflow-hidden shadow-lg border relative ${
-        isDark ? "bg-gray-800 border-gray-700" : "bg-white/90 border-white/20"
-      }`}
+      className={`mx-4 mb-5 rounded-2xl overflow-hidden shadow-lg border relative`}
+      style={{
+        background: themeColors.surface,
+        borderColor: isDark ? "#374151" : "rgba(255,255,255,0.2)",
+      }}
     >
       <div
-        className={`absolute inset-0 bg-gradient-to-br ${
-          isDark ? "from-gray-800 to-gray-900" : "from-white/90 to-white/60"
-        }`}
+        className={`absolute inset-0`}
+        style={{ background: themeColors.surface, opacity: 0.98 }}
       />
 
       <div className="relative flex items-center px-5 pt-5 pb-4">
         <div
           className="w-12 h-12 rounded-full flex items-center justify-center mr-3.5"
-          style={{ backgroundColor: `${themeColors.primary}18` }}
+          style={{ background: themeColors.surface }}
         >
           <HiOutlineDownload size={24} color={themeColors.primary} />
         </div>

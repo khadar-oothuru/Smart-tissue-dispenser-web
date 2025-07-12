@@ -215,6 +215,16 @@ export const AreaLineChart = ({
     );
   }
 
+  // Calculate dynamic width based on data points
+  const calculateChartWidth = () => {
+    if (!chartData || !chartData.labels) return "100%";
+    const dataPoints = chartData.labels.length;
+    const minWidthPerPoint = 60; // Minimum pixels per data point
+    const calculatedWidth = dataPoints * minWidthPerPoint;
+    const minWidth = 800; // Minimum chart width
+    return scrollable && calculatedWidth > minWidth ? calculatedWidth : "100%";
+  };
+
   // Chart options
   const options = {
     responsive: true,
@@ -326,7 +336,7 @@ export const AreaLineChart = ({
         </div>
 
         {showPredictions && (
-          <div className="overflow-x-auto -mx-4 px-4">
+          <div className="overflow-x-auto -mx-4 px-4 hide-scrollbar">
             <div className="flex gap-3 pb-2">
               {/* Highest Reach Cards */}
               {showHighestReach &&
@@ -334,7 +344,6 @@ export const AreaLineChart = ({
                   if (!reach || reach.value === 0) return null;
                   const config = alertConfigs[alertType];
                   if (!config) return null;
-
                   return (
                     <div
                       key={`highest-${alertType}`}
@@ -401,7 +410,7 @@ export const AreaLineChart = ({
                   return (
                     <div
                       key={`prediction-${alertType}`}
-                      className="flex-shrink-0 w-36 p-3 rounded-xl border-l-4"
+                      className="flex-shrink-0 w-36 p-3                       rounded-xl border-l-4"
                       style={{
                         backgroundColor: config.bgColor,
                         borderLeftColor: config.color,
@@ -432,78 +441,143 @@ export const AreaLineChart = ({
                   );
                 })}
             </div>
+            {/* Hide scrollbar for Chrome, Safari, Opera */}
+            <style>{`
+              .hide-scrollbar::-webkit-scrollbar {
+                display: none;
+              }
+              .hide-scrollbar {
+                scrollbar-width: none; /* Firefox */
+                -ms-overflow-style: none; /* IE 10+ */
+              }
+            `}</style>
           </div>
         )}
       </div>
     );
   };
 
+  // Render scrollable chart
   const renderChart = () => {
-    const chartConfig = {
-      ...chartData,
-      datasets: chartData.datasets.map((dataset) => ({
-        ...dataset,
-        borderColor: dataset.borderColor || themeColors.primary,
-        backgroundColor: dataset.backgroundColor || `${themeColors.primary}20`,
-        pointBackgroundColor: dataset.borderColor || themeColors.primary,
-        pointBorderColor: dataset.borderColor || themeColors.primary,
-        pointBorderWidth: 2,
-        pointRadius: 4,
-        pointHoverRadius: 6,
-      })),
-    };
+    const chartWidth = calculateChartWidth();
+    const isScrollable = scrollable && chartWidth !== "100%";
 
-    // Glassmorphic chart container (no overlay, canvas is transparent)
     return (
       <div
-        className="h-56 w-full rounded-2xl shadow-lg border border-white/30 backdrop-blur-md relative overflow-hidden"
+        className={`relative ${isScrollable ? "overflow-x-auto" : ""}`}
         style={{
-          background: isDark
-            ? 'linear-gradient(135deg, #23272f 0%, #181a20 100%)'
-            : 'linear-gradient(135deg, #fff8 0%, #f3f4f6cc 100%)',
-          borderColor: isDark ? '#23272f' : `${themeColors.primary}33`,
+          height: "300px",
+          width: "100%",
         }}
       >
-        <Line
-          data={chartConfig}
-          options={{
-            ...options,
-            plugins: {
-              ...options.plugins,
-              chartAreaBackground: {
-                color: 'rgba(0,0,0,0)', // transparent so parent bg shows through
-              },
-            },
+        <div
+          style={{
+            height: "100%",
+            width: isScrollable ? chartWidth : "100%",
+            minWidth: isScrollable ? "100%" : "auto",
           }}
-        />
+        >
+          <div
+            className="h-full w-full rounded-2xl shadow-lg border border-white/30 backdrop-blur-md relative overflow-hidden"
+            style={{
+              background: isDark
+                ? // Match Smart Analytics card bg
+                  themeColors.surface || themeColors.card
+                : themeColors.surface || "#fff",
+              borderColor: isDark
+                ? themeColors.border
+                : `${themeColors.primary}33`,
+            }}
+          >
+            <Line
+              data={chartData}
+              options={{
+                ...options,
+                plugins: {
+                  ...options.plugins,
+                  chartAreaBackground: {
+                    color: "rgba(0,0,0,0)", // transparent so parent bg shows through
+                  },
+                },
+                scales: {
+                  ...options.scales,
+                  x: {
+                    ...options.scales.x,
+                    ticks: {
+                      ...options.scales.x.ticks,
+                      color: isDark ? "#E5E7EB" : themeColors.text,
+                      font: {
+                        size: 12,
+                        weight: "500",
+                        family: "Inter, sans-serif",
+                      },
+                      padding: 8,
+                      maxRotation: 45,
+                      minRotation: 0,
+                      autoSkip: false, // Show all labels when scrollable
+                    },
+                  },
+                  y: {
+                    ...options.scales.y,
+                    ticks: {
+                      ...options.scales.y.ticks,
+                      color: isDark ? "#E5E7EB" : themeColors.text,
+                      font: {
+                        size: 12,
+                        weight: "500",
+                        family: "Inter, sans-serif",
+                      },
+                      padding: 8,
+                    },
+                  },
+                },
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Scroll indicator */}
+        {isScrollable && (
+          <div
+            className="absolute bottom-2 right-2 bg-black/50 text-white px-3 py-1 rounded-full text-xs backdrop-blur-sm"
+            style={{
+              backgroundColor: isDark
+                ? "rgba(255,255,255,0.1)"
+                : "rgba(0,0,0,0.1)",
+              color: isDark ? "#E5E7EB" : themeColors.text,
+            }}
+          >
+            Scroll to view more →
+          </div>
+        )}
       </div>
     );
   };
 
   return (
     <div
-      className="my-6 rounded-3xl p-6 border border-white/20 shadow-xl backdrop-blur-md"
+      className="my-6  p-6 "
       style={{
-        background: isDark
-          ? "linear-gradient(135deg, #23272f 0%, #181a20 100%)"
-          : "linear-gradient(135deg, #fff8 0%, #f3f4f6cc 100%)",
-        borderColor: isDark ? "#23272f" : "#e5e7eb33",
+        // background: isDark
+        //   ? // Custom alerts card dark gradient (example)
+        //     "linear-gradient(135deg, #23272f 0%, #232b3e 100%)"
+        //   : // Custom alerts card light gradient (example)
+        //     "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
+        // borderColor: isDark ? "#23272f" : "#e5e7eb33",
       }}
     >
       {/* Header */}
-      {(title || subtitle) && (
-        <div className="mb-4">
-          {title && (
-            <h2
-              className="text-2xl font-extrabold tracking-tight mb-1"
-              style={{ color: themeColors.heading }}
-            >
-              {title}
-            </h2>
-          )}
+      {title && (
+        <div className="mb-5">
+          <h2
+            className="text-2xl font-bold tracking-tight"
+            style={{ color: themeColors.heading }}
+          >
+            {title}
+          </h2>
           {subtitle && (
             <p
-              className="text-sm font-normal opacity-75"
+              className="text-sm mt-1 opacity-80"
               style={{ color: themeColors.text }}
             >
               {subtitle}
@@ -513,32 +587,7 @@ export const AreaLineChart = ({
       )}
 
       {/* Chart */}
-      {shouldRenderChart &&
-        (scrollable ? (
-          <div className="overflow-x-auto -mx-6 px-6">
-            <div
-              style={{
-                minWidth: `${Math.max(600, chartData.labels.length * 85)}px`,
-              }}
-            >
-              {renderChart()}
-            </div>
-          </div>
-        ) : (
-          renderChart()
-        ))}
-
-      {/* No chart data message */}
-      {!shouldRenderChart && alertData && (
-        <div className="p-6 bg-blue-50 dark:bg-blue-900/20 rounded-2xl my-2">
-          <p
-            className="text-center text-sm font-medium italic"
-            style={{ color: themeColors.text }}
-          >
-            📊 Alert breakdown below - No time series data available for chart
-          </p>
-        </div>
-      )}
+      {shouldRenderChart && renderChart()}
 
       {/* Analytics Insights */}
       {renderAnalyticsInsights()}
@@ -549,7 +598,14 @@ export const AreaLineChart = ({
           className="border-t pt-5 mt-6"
           style={{ borderTopColor: isDark ? themeColors.border : "#EEE" }}
         >
-          <div className="overflow-x-auto -mx-6 px-6">
+          <div
+            className="overflow-x-auto -mx-6 px-6 hide-scrollbar"
+            style={{
+              scrollbarWidth: "none",
+              msOverflowStyle: "none",
+              overflowX: "auto",
+            }}
+          >
             <div className="flex gap-4 pb-2">
               {Object.entries(alertConfigs).map(([alertType, config]) => {
                 const alertCount = alertData[alertType] || 0;
@@ -587,6 +643,15 @@ export const AreaLineChart = ({
                 );
               })}
             </div>
+            <style>{`
+              .hide-scrollbar::-webkit-scrollbar {
+                display: none;
+              }
+              .hide-scrollbar {
+                scrollbar-width: none; /* Firefox */
+                -ms-overflow-style: none; /* IE 10+ */
+              }
+            `}</style>
           </div>
         </div>
       )}
@@ -603,7 +668,14 @@ export const AreaLineChart = ({
           >
             Weekly Breakdown
           </h3>
-          <div className="overflow-x-auto -mx-6 px-6">
+          <div
+            className="overflow-x-auto -mx-6 px-6 hide-scrollbar"
+            style={{
+              scrollbarWidth: "none",
+              msOverflowStyle: "none",
+              overflowX: "auto",
+            }}
+          >
             <div className="flex gap-5 pb-2">
               {weeklyData.map((week, index) => (
                 <div
@@ -657,6 +729,11 @@ export const AreaLineChart = ({
                 </div>
               ))}
             </div>
+            <style>{`
+              .hide-scrollbar::-webkit-scrollbar {
+                display: none;
+              }
+            `}</style>
           </div>
         </div>
       )}

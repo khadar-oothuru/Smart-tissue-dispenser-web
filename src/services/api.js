@@ -13,7 +13,7 @@ const AUTH_BASE_URL = `${API_URL}/auth`;
 console.log("API URL:", API_URL);
 
 // Configure global axios defaults
-axios.defaults.timeout = 45000; // 45 seconds default timeout
+// axios.defaults.timeout = 45000; // Timeout removed to allow long-running requests
 
 // Add request interceptor for logging
 axios.interceptors.request.use((request) => {
@@ -206,18 +206,15 @@ export async function updateProfile(token, data) {
 
 export async function uploadProfilePicture(token, imageFile) {
   try {
-    const formData = new FormData();
-    formData.append("image", {
-      uri: imageFile.uri,
-      type: "image/jpeg",
-      name: "profile.jpg",
-    });
-
+    // imageFile is a FormData from the caller, so just use it directly
     const res = await axios.post(
       `${AUTH_BASE_URL}/user/upload-picture/`,
-      formData,
+      imageFile,
       {
-        headers: authHeaders(token, "multipart/form-data"),
+        headers: {
+          Authorization: `Bearer ${token}`,
+          // DO NOT set Content-Type here!
+        },
       }
     );
     return res.data;
@@ -350,7 +347,6 @@ export async function fetchDevices(token, retryCount = 2, retryDelay = 2000) {
 
       const res = await axios.get(`${API_BASE_URL}/devices/`, {
         headers: authHeaders(token, null),
-        timeout: 45000, // Increase timeout to 45 seconds
       });
 
       return res.data;
@@ -456,7 +452,6 @@ export async function fetchAllDeviceData(
 
       const res = await axios.get(`${API_BASE_URL}/device-data/all/`, {
         headers: authHeaders(token, null),
-        timeout: 45000, // Increase timeout to 45 seconds
       });
 
       return res.data;
@@ -506,7 +501,6 @@ export async function fetchDeviceDataById(
 
       const res = await axios.get(`${API_BASE_URL}/device-data/${deviceId}/`, {
         headers: authHeaders(token, null),
-        timeout: 45000, // Increase timeout to 45 seconds
       });
 
       return res.data;
@@ -557,7 +551,6 @@ export async function fetchNotifications(
 
       const res = await axios.get(`${API_BASE_URL}/notifications/`, {
         headers: authHeaders(token, null),
-        timeout: 45000, // Increase timeout to 45 seconds
       });
 
       return res.data;
@@ -608,7 +601,6 @@ export async function fetchUnreadNotificationCount(
         `${API_BASE_URL}/notifications/unread-count/`,
         {
           headers: authHeaders(token, null),
-          timeout: 45000, // Increase timeout to 45 seconds
         }
       );
 
@@ -720,7 +712,6 @@ export async function fetchDeviceAnalytics(
 
       const res = await axios.get(`${API_BASE_URL}/device-analytics/`, {
         headers: authHeaders(token, null),
-        timeout: 45000, // Increase timeout to 45 seconds
       });
 
       return res.data;
@@ -773,7 +764,6 @@ export async function fetchDeviceRealtimeStatus(
         `${API_BASE_URL}/device-analytics/realtime-status/`,
         {
           headers: authHeaders(token, null),
-          timeout: 45000, // Increase timeout to 45 seconds
         }
       );
 
@@ -825,7 +815,6 @@ export async function fetchDeviceStatusSummary(
         `${API_BASE_URL}/device-analytics/status-summary/`,
         {
           headers: authHeaders(token, null),
-          timeout: 45000, // Increase timeout to 45 seconds
         }
       );
 
@@ -895,7 +884,6 @@ export async function fetchTimeBasedAnalytics(
         `${API_BASE_URL}/device-analytics/time-based/?${params.toString()}`,
         {
           headers: authHeaders(token, null),
-          timeout: 45000, // Increase timeout to 45 seconds
         }
       );
 
@@ -1006,7 +994,6 @@ export async function fetchSummaryAnalytics(
 
       const res = await axios.get(`${API_BASE_URL}/device-analytics/summary/`, {
         headers: authHeaders(token, null),
-        timeout: 45000, // Increase timeout to 45 seconds
       });
 
       return res.data;
@@ -1059,7 +1046,6 @@ export async function fetchBatteryUsageAnalytics(
         `${API_BASE_URL}/device-analytics/battery-usage/`,
         {
           headers: authHeaders(token, null),
-          timeout: 45000, // Increase timeout to 45 seconds
         }
       );
 
@@ -1117,7 +1103,6 @@ export async function fetchBatteryUsageTrends(
         `${API_BASE_URL}/device-analytics/battery-usage-trends/?${params.toString()}`,
         {
           headers: authHeaders(token, null),
-          timeout: 45000, // Increase timeout to 45 seconds
         }
       );
 
@@ -1427,7 +1412,6 @@ export async function fetchDeviceStatusDistribution(
         `${API_BASE_URL}/device-analytics/status-distribution/`,
         {
           headers: authHeaders(token, null),
-          timeout: 45000, // Increase timeout to 45 seconds
         }
       );
 
@@ -1607,7 +1591,6 @@ export async function fetchDashboardStats(
 
       const res = await axios.get(`${API_BASE_URL}/admin/dashboard-stats/`, {
         headers: authHeaders(token),
-        timeout: 45000, // Increase timeout to 45 seconds
       });
 
       return {

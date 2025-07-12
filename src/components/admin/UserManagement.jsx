@@ -16,7 +16,7 @@ import {
 import RoleChangeModal from "./RoleChangeModal";
 import UserProfileModal from "./UserProfileModal";
 import UserItem from "./UserItem";
-import UserItemClean from "./UserItemClean";
+
 import adminService from "../../services/AdminService";
 
 const UserManagement = () => {
@@ -314,19 +314,43 @@ const UserManagement = () => {
   };
 
   // Stats cards
-  const StatCard = ({ title, value, icon: Icon, color }) => (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+  // Modern Stat Card with vibrant color backgrounds and icon containers
+  const StatCard = ({ title, value, icon: Icon, color, iconBg, iconColor }) => (
+    <div
+      className="rounded-3xl shadow-2xl p-6 flex flex-col justify-between transition-all duration-200 hover:scale-[1.03]"
+      style={{
+        background: color,
+        border: "1.5px solid #e0e0e0",
+        minHeight: 140,
+      }}
+    >
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+          <p
+            className="text-sm font-medium opacity-80 mb-1"
+            style={{ color: "#555" }}
+          >
             {title}
           </p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">
+          <p
+            className="text-3xl font-extrabold leading-tight"
+            style={{ color: "#222" }}
+          >
             {value}
           </p>
         </div>
-        <div className={`p-3 rounded-full ${color}`}>
-          <Icon className="h-6 w-6" />
+        <div
+          className="rounded-full flex items-center justify-center shadow-lg"
+          style={{
+            background: iconBg,
+            width: 52,
+            height: 52,
+            minWidth: 52,
+            minHeight: 52,
+            boxShadow: "0 4px 16px 0 rgba(0,0,0,0.07)",
+          }}
+        >
+          <Icon size={28} color={iconColor} />
         </div>
       </div>
     </div>
@@ -367,73 +391,205 @@ const UserManagement = () => {
           title="Total Users"
           value={stats.total_users}
           icon={Users}
-          color="bg-blue-100 text-blue-600"
+          color="#E8F4FD"
+          iconBg="#D0E8FF"
+          iconColor="#007AFF"
         />
         <StatCard
           title="Active Users"
           value={stats.active_users}
           icon={CheckCircle}
-          color="bg-green-100 text-green-600"
+          color="#E8F5E8"
+          iconBg="#B6F0C2"
+          iconColor="#34C759"
         />
         <StatCard
           title="Admins"
           value={stats.admin_count}
           icon={Shield}
-          color="bg-purple-100 text-purple-600"
+          color="#F3E8FD"
+          iconBg="#D1B3FF"
+          iconColor="#8E44AD"
         />
         <StatCard
           title="New This Month"
           value={stats.new_users_this_month}
           icon={UserPlus}
-          color="bg-orange-100 text-orange-600"
+          color="#FFF4E6"
+          iconBg="#FFD59E"
+          iconColor="#FF9500"
         />
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div
+        className="shadow rounded-3xl p-8 backdrop-blur-xl border"
+        style={{
+          background: themeColors.glassBg || "rgba(40,40,60,0.35)",
+          borderColor: themeColors.glassBorder || "rgba(200,200,255,0.18)",
+          boxShadow:
+            themeColors.glassShadow || "0 8px 32px 0 rgba(31, 38, 135, 0.18)",
+        }}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <style>{`
+              .theme-search-input::placeholder {
+                color: ${themeColors.inputIcon || "#b0b8c1"} !important;
+                opacity: 1;
+                font-weight: 500;
+              }
+              .theme-search-input::-webkit-input-placeholder {
+                color: ${themeColors.inputIcon || "#b0b8c1"} !important;
+                opacity: 1;
+                font-weight: 500;
+              }
+              .theme-search-input:-ms-input-placeholder {
+                color: ${themeColors.inputIcon || "#b0b8c1"} !important;
+                opacity: 1;
+                font-weight: 500;
+              }
+              .theme-search-input::-ms-input-placeholder {
+                color: ${themeColors.inputIcon || "#b0b8c1"} !important;
+                opacity: 1;
+                font-weight: 500;
+              }
+            `}</style>
+            <Search
+              className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5"
+              style={{ color: themeColors.inputIcon || "#b0b8c1" }}
+            />
             <input
               type="text"
               placeholder="Search users..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="pl-12 pr-4 py-3 w-full rounded-xl focus:ring-2 focus:ring-blue-400 text-base theme-search-input"
+              style={{
+                background: themeColors.inputBg || "rgba(255,255,255,0.18)",
+                border: `1.5px solid ${
+                  themeColors.inputBorder || "rgba(180,180,255,0.18)"
+                }`,
+                color: themeColors.text || "#fff",
+                boxShadow:
+                  themeColors.inputShadow ||
+                  "0 2px 8px 0 rgba(31, 38, 135, 0.08)",
+                fontWeight: 500,
+                outline: "none",
+                transition: "all 0.2s",
+              }}
             />
           </div>
 
           {/* Role Filter */}
-          <select
-            value={filterRole}
-            onChange={(e) => setFilterRole(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-          >
-            <option value="all">All Roles</option>
-            <option value="admin">Admin</option>
-            <option value="user">User</option>
-          </select>
+          <div className="relative">
+            <style>{`
+              select.theme-dropdown, select.theme-dropdown option {
+                background: ${
+                  themeColors.inputBg || "rgba(40,40,60,0.95)"
+                } !important;
+                color: ${themeColors.text || "#fff"} !important;
+              }
+              select.theme-dropdown:focus {
+                outline: 2px solid ${themeColors.primary || "#4f8cff"};
+                box-shadow: 0 0 0 2px ${themeColors.primary || "#4f8cff"}33;
+              }
+              select.theme-dropdown::-webkit-scrollbar {
+                width: 8px;
+                background: ${themeColors.inputBg || "rgba(40,40,60,0.95)"};
+              }
+              select.theme-dropdown::-webkit-scrollbar-thumb {
+                background: ${themeColors.inputBorder || "#444"};
+                border-radius: 4px;
+              }
+            `}</style>
+            <select
+              value={filterRole}
+              onChange={(e) => setFilterRole(e.target.value)}
+              className="px-4 py-3 w-full rounded-xl focus:ring-2 focus:ring-blue-400 text-base appearance-none theme-dropdown"
+              style={{
+                background: themeColors.inputBg || "rgba(255,255,255,0.18)",
+                border: `1.5px solid ${
+                  themeColors.inputBorder || "rgba(180,180,255,0.18)"
+                }`,
+                color: themeColors.text || "#fff",
+                boxShadow:
+                  themeColors.inputShadow ||
+                  "0 2px 8px 0 rgba(31, 38, 135, 0.08)",
+                fontWeight: 500,
+                outline: "none",
+                transition: "all 0.2s",
+                WebkitAppearance: "none",
+                MozAppearance: "none",
+                appearance: "none",
+              }}
+            >
+              <option value="all">All Roles</option>
+              <option value="admin">Admin</option>
+              <option value="user">User</option>
+            </select>
+            <span
+              className="pointer-events-none absolute right-4 top-1/2 transform -translate-y-1/2 text-lg"
+              style={{ color: themeColors.inputIcon || "#b0b8c1" }}
+            >
+              &#9662;
+            </span>
+          </div>
 
           {/* Status Filter */}
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-          >
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
+          <div className="relative">
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="px-4 py-3 w-full rounded-xl focus:ring-2 focus:ring-blue-400 text-base appearance-none theme-dropdown"
+              style={{
+                background: themeColors.inputBg || "rgba(255,255,255,0.18)",
+                border: `1.5px solid ${
+                  themeColors.inputBorder || "rgba(180,180,255,0.18)"
+                }`,
+                color: themeColors.text || "#fff",
+                boxShadow:
+                  themeColors.inputShadow ||
+                  "0 2px 8px 0 rgba(31, 38, 135, 0.08)",
+                fontWeight: 500,
+                outline: "none",
+                transition: "all 0.2s",
+                WebkitAppearance: "none",
+                MozAppearance: "none",
+                appearance: "none",
+              }}
+            >
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+            <span
+              className="pointer-events-none absolute right-4 top-1/2 transform -translate-y-1/2 text-lg"
+              style={{ color: themeColors.inputIcon || "#b0b8c1" }}
+            >
+              &#9662;
+            </span>
+          </div>
 
           {/* Bulk Actions only, no view mode */}
-          <div className="flex space-x-2">
+          <div className="flex space-x-2 items-center">
             {selectedUsers.length > 0 && (
               <button
                 onClick={handleBulkDelete}
-                className="inline-flex items-center px-3 py-2 border border-red-300 rounded-md text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100"
+                className="inline-flex items-center px-4 py-3 rounded-xl text-base font-semibold transition-colors duration-200 shadow-md"
+                style={{
+                  background: themeColors.dangerBg || "rgba(255, 0, 0, 0.08)",
+                  color: themeColors.dangerText || "#d32f2f",
+                  border: `1.5px solid ${
+                    themeColors.dangerBorder || "rgba(255,0,0,0.18)"
+                  }`,
+                }}
               >
-                <Trash2 className="h-4 w-4 mr-1" />
+                <Trash2
+                  className="h-5 w-5 mr-2"
+                  style={{ color: themeColors.dangerText || "#d32f2f" }}
+                />
                 Delete ({selectedUsers.length})
               </button>
             )}
@@ -442,7 +598,7 @@ const UserManagement = () => {
       </div>
 
       {/* Users Display: Only User Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {filteredUsers.map((user) => (
           <UserItem
             key={user.id}

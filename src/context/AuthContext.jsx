@@ -111,9 +111,8 @@ const AuthProvider = ({ children }) => {
       try {
         // Test API connectivity
         axios.defaults.baseURL = API_URL;
-        axios.defaults.timeout = 10000; // 10 second timeout
+        axios.defaults.timeout = 95000;
 
-        // Simple health check - skip for now to avoid blocking
         console.log("✅ API setup completed:", API_URL);
         setApiStatus("online");
       } catch (error) {

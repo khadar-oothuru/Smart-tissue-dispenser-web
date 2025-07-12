@@ -19,7 +19,7 @@ import AdminService from "../../services/AdminService";
 // Import new components
 import UserManagement from "./UserManagement";
 import AdminProfile from "./AdminProfile";
-import AppLogs from "./AppLogs";
+import AppLogs from "../Logs/AppLogs";
 
 const passwordSchema = yup.object().shape({
   currentPassword: yup.string().required("Current password is required"),

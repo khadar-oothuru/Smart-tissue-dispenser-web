@@ -19,8 +19,8 @@ export const useTheme = () => {
 };
 
 export const ThemeProvider = ({ children }) => {
-  const [theme, setThemeState] = useState("system");
-  const [colorScheme, setColorScheme] = useState("light");
+  const [theme, setThemeState] = useState("dark");
+  const [colorScheme, setColorScheme] = useState("dark");
 
   useEffect(() => {
     const loadTheme = () => {

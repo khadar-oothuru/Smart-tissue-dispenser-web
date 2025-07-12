@@ -4,206 +4,25 @@ import useDeviceStore from "../store/useDeviceStore";
 import {
   Plus,
   Search,
-  Filter,
-  MoreVertical,
-  Battery,
-  Wifi,
-  WifiOff,
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
   Edit,
   Trash2,
-  Settings,
   RefreshCw,
   Smartphone,
-  Signal,
-  Activity,
-  Clock,
-  Eye,
-  EyeOff,
-  Download,
-  Upload,
-  QrCode,
-  Scan,
-  Network,
-  Shield,
-  AlertCircle,
-  Zap,
-  Droplets,
-  Power,
-  ShieldAlert,
-  Database,
-  Globe,
-  AlertOctagon,
-  Wifi as WifiIcon,
+  Wifi,
+  // Loader,
   QrCode as QrCodeIcon,
-  Settings as SettingsIcon,
-  Info,
+  Wifi as WifiIcon,
+  Calendar,
+  Home,
+  Building2,
   X,
-  Check,
-  Loader,
+  // ...existing code...
+  // Remove Male, Female from here
 } from "lucide-react";
+
+import { CustomAlert } from "./common/CustomAlert";
+import Spinner from "./common/Spinner";
 import { useTheme } from "../context/ThemeContext";
-
-// Custom Alert Component - matches mobile app's alert system
-const CustomAlert = ({
-  visible,
-  onClose,
-  title,
-  message,
-  type = "info",
-  primaryAction,
-  secondaryAction,
-}) => {
-  const { themeColors } = useTheme();
-
-  if (!visible) return null;
-
-  const getIcon = () => {
-    switch (type) {
-      case "success":
-        return (
-          <CheckCircle
-            className="h-6 w-6"
-            style={{ color: themeColors.success }}
-          />
-        );
-      case "error":
-        return (
-          <AlertCircle
-            className="h-6 w-6"
-            style={{ color: themeColors.danger }}
-          />
-        );
-      case "warning":
-        return (
-          <AlertTriangle
-            className="h-6 w-6"
-            style={{ color: themeColors.warning }}
-          />
-        );
-      default:
-        return <Info className="h-6 w-6" style={{ color: themeColors.info }} />;
-    }
-  };
-
-  const getModalStyle = () => {
-    switch (type) {
-      case "success":
-        return {
-          background: `linear-gradient(135deg, ${themeColors.success}15 0%, ${themeColors.success}05 100%)`,
-          border: `2px solid ${themeColors.success}30`,
-          boxShadow: `0 20px 40px ${themeColors.success}20`,
-        };
-      case "error":
-        return {
-          background: `linear-gradient(135deg, ${themeColors.danger}15 0%, ${themeColors.danger}05 100%)`,
-          border: `2px solid ${themeColors.danger}30`,
-          boxShadow: `0 20px 40px ${themeColors.danger}20`,
-        };
-      case "warning":
-        return {
-          background: `linear-gradient(135deg, ${themeColors.warning}15 0%, ${themeColors.warning}05 100%)`,
-          border: `2px solid ${themeColors.warning}30`,
-          boxShadow: `0 20px 40px ${themeColors.warning}20`,
-        };
-      default:
-        return {
-          background: `linear-gradient(135deg, ${themeColors.info}15 0%, ${themeColors.info}05 100%)`,
-          border: `2px solid ${themeColors.info}30`,
-          boxShadow: `0 20px 40px ${themeColors.info}20`,
-        };
-    }
-  };
-
-  return (
-    <div
-      className="fixed inset-0 backdrop-blur-md flex items-center justify-center z-50 transition-all duration-500"
-      style={{
-        background: `linear-gradient(135deg, ${themeColors.background} 0%, ${themeColors.surface} 100%)`,
-      }}
-    >
-      <div
-        className="rounded-3xl shadow-2xl max-w-md w-full mx-4 transition-all duration-500 transform scale-100"
-        style={{
-          ...getModalStyle(),
-          backdropFilter: "blur(20px)",
-        }}
-      >
-        <div className="p-8">
-          <div className="flex items-start">
-            <div className="flex-shrink-0 scale-125 drop-shadow-xl animate-pulse">
-              {getIcon()}
-            </div>
-            <div className="ml-6 flex-1">
-              <h3
-                className="text-2xl font-bold mb-3"
-                style={{ color: themeColors.heading }}
-              >
-                {title}
-              </h3>
-              <div
-                className="text-base leading-relaxed whitespace-pre-line"
-                style={{ color: themeColors.text }}
-              >
-                {message}
-              </div>
-            </div>
-            <button
-              onClick={onClose}
-              className="ml-4 flex-shrink-0 rounded-full p-2 transition-all duration-300 hover:scale-110"
-              style={{
-                color: themeColors.muted,
-                backgroundColor: `${themeColors.border}20`,
-              }}
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-          <div className="mt-8 flex gap-4">
-            {secondaryAction && (
-              <button
-                onClick={secondaryAction.onPress}
-                className="flex-1 px-6 py-3 text-sm font-semibold rounded-xl transition-all duration-300 hover:scale-105 shadow-lg"
-                style={{
-                  color: themeColors.text,
-                  backgroundColor: themeColors.surface,
-                  border: `2px solid ${themeColors.border}`,
-                  boxShadow: `0 4px 15px ${themeColors.border}30`,
-                }}
-              >
-                {secondaryAction.text}
-              </button>
-            )}
-            {primaryAction && (
-              <button
-                onClick={primaryAction.onPress}
-                className="flex-1 px-6 py-3 text-sm font-semibold text-white rounded-xl transition-all duration-300 hover:scale-105 shadow-lg"
-                style={{
-                  background:
-                    type === "error"
-                      ? `linear-gradient(135deg, ${themeColors.danger} 0%, ${themeColors.accent} 100%)`
-                      : type === "success"
-                      ? `linear-gradient(135deg, ${themeColors.success} 0%, ${themeColors.primary} 100%)`
-                      : `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.accent} 100%)`,
-                  boxShadow:
-                    type === "error"
-                      ? `0 4px 15px ${themeColors.danger}40`
-                      : type === "success"
-                      ? `0 4px 15px ${themeColors.success}40`
-                      : `0 4px 15px ${themeColors.primary}40`,
-                }}
-              >
-                {primaryAction.text}
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 // WiFi Options Modal - matches mobile app's WiFi options
 const WiFiOptionsModal = ({
@@ -421,7 +240,7 @@ const AddDeviceModal = ({
       }}
     >
       <div
-        className="rounded-3xl shadow-2xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto transition-all duration-500 transform scale-100"
+        className="rounded-3xl shadow-2xl w-full max-w-lg mx-4 transition-all duration-500 transform scale-100"
         style={{
           background: `linear-gradient(135deg, ${themeColors.surface} 0%, ${themeColors.card} 100%)`,
           border: `2px solid ${themeColors.border}`,
@@ -430,20 +249,25 @@ const AddDeviceModal = ({
         }}
       >
         <div className="p-8">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center mb-8">
+            <Smartphone
+              className="h-8 w-8 mr-3"
+              style={{ color: themeColors.primary }}
+            />
             <h3
-              className="text-2xl font-bold"
-              style={{ color: themeColors.heading }}
+              className="text-3xl font-extrabold tracking-tight"
+              style={{ color: themeColors.primary }}
             >
               {editingDevice ? "Edit Device" : "Add New Device"}
             </h3>
             <button
               onClick={onClose}
-              className="rounded-full p-2 transition-all duration-300 hover:scale-110"
+              className="ml-auto rounded-full p-2 transition-all duration-300 hover:scale-110"
               style={{
                 color: themeColors.muted,
                 backgroundColor: `${themeColors.border}20`,
               }}
+              title="Close"
             >
               <X className="h-5 w-5" />
             </button>
@@ -451,138 +275,170 @@ const AddDeviceModal = ({
           {/* Device Metadata Info (edit mode) */}
           {editingDevice && (
             <div
-              className="mb-4 p-3 rounded"
+              className="mb-3 px-3 py-2 rounded"
               style={{
                 background: themeColors.inputbg,
                 border: `1px solid ${themeColors.border}`,
+                fontSize: "15px",
+                lineHeight: 1.4,
+                minHeight: "unset",
+                marginBottom: 8,
               }}
             >
               <div
-                className="text-xs mb-1"
-                style={{ color: themeColors.muted }}
+                className="text-sm mb-2 font-bold"
+                style={{ color: themeColors.muted, letterSpacing: 0.5 }}
               >
                 Device Info
               </div>
-              {editingDevice.metadata && (
-                <>
-                  <div className="flex justify-between text-sm">
-                    <span>Model:</span>
-                    <span>{editingDevice.metadata.model || "N/A"}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Firmware:</span>
-                    <span>
-                      v{editingDevice.metadata.firmware_version || "N/A"}
-                    </span>
-                  </div>
-                  {editingDevice.metadata.mac_address && (
-                    <div className="flex justify-between text-sm">
-                      <span>MAC:</span>
-                      <span>{editingDevice.metadata.mac_address}</span>
+              <div className="flex flex-wrap gap-x-8 gap-y-2 items-center">
+                {editingDevice.metadata && (
+                  <>
+                    <div className="flex items-center min-w-[120px] mr-3">
+                      <span className="font-semibold">Model:</span>
+                      <span className="ml-2">
+                        {editingDevice.metadata.model || "N/A"}
+                      </span>
                     </div>
-                  )}
-                </>
-              )}
-              <div className="flex justify-between text-sm">
-                <span>Tissue Type:</span>
-                <span>
-                  {editingDevice.tissue_type === "hand_towel"
-                    ? "Hand Towel"
-                    : editingDevice.tissue_type === "toilet_paper"
-                    ? "Rest Room Paper"
-                    : "N/A"}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>Meter Capacity:</span>
-                <span>{editingDevice.meter_capacity || "N/A"}</span>
+                    <div className="flex items-center min-w-[130px] mr-3">
+                      <span className="font-semibold">Firmware:</span>
+                      <span className="ml-2">
+                        v{editingDevice.metadata.firmware_version || "N/A"}
+                      </span>
+                    </div>
+                    {editingDevice.metadata.mac_address && (
+                      <div className="flex items-center min-w-[140px] mr-3">
+                        <span className="font-semibold">MAC:</span>
+                        <span className="ml-2">
+                          {editingDevice.metadata.mac_address}
+                        </span>
+                      </div>
+                    )}
+                  </>
+                )}
+                <div className="flex items-center min-w-[120px] mr-3">
+                  <span className="font-semibold">Tissue:</span>
+                  <span className="ml-2">
+                    {editingDevice.tissue_type === "hand_towel"
+                      ? "Hand Towel"
+                      : editingDevice.tissue_type === "toilet_paper"
+                      ? "Rest Room Paper"
+                      : "N/A"}
+                  </span>
+                </div>
+                <div className="flex items-center min-w-[120px]">
+                  <span className="font-semibold">Capacity:</span>
+                  <span className="ml-2">
+                    {editingDevice.meter_capacity || "N/A"}
+                  </span>
+                </div>
               </div>
             </div>
           )}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Device Name */}
             <div>
               <label
-                className="block text-sm font-medium"
+                className="block text-sm font-medium mb-1 flex items-center gap-2"
                 style={{ color: themeColors.heading }}
               >
+                <Smartphone
+                  className="h-5 w-5"
+                  style={{ color: themeColors.primary }}
+                />
                 Device Name *
               </label>
-              <input
-                type="text"
-                required
-                value={formData.name}
-                onChange={(e) => handleChange("name", e.target.value)}
-                className="mt-2 block w-full rounded-xl px-4 py-3 transition-all duration-300 focus:ring-2 focus:ring-offset-2"
-                style={{
-                  color: themeColors.text,
-                  backgroundColor: themeColors.inputbg,
-                  border: `2px solid ${
-                    errors.name ? themeColors.danger : themeColors.border
-                  }`,
-                  boxShadow: `0 2px 8px ${themeColors.border}20`,
-                }}
-              />
+              <div>
+                <input
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={(e) => handleChange("name", e.target.value)}
+                  className="mt-2 block w-full rounded-lg pl-3 pr-3 py-2 text-base transition-all duration-200 focus:ring-2 focus:ring-offset-2"
+                  style={{
+                    color: themeColors.text,
+                    backgroundColor: themeColors.inputbg,
+                    border: `2px solid ${
+                      errors.name ? themeColors.danger : themeColors.border
+                    }`,
+                    boxShadow: `0 2px 8px ${themeColors.border}20`,
+                  }}
+                />
+              </div>
               {errors.name && (
                 <div className="text-xs text-red-500 mt-1">{errors.name}</div>
               )}
             </div>
-            <div>
-              <label
-                className="block text-sm font-medium"
-                style={{ color: themeColors.heading }}
-              >
-                Room Number *
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.room_number}
-                onChange={(e) => handleChange("room_number", e.target.value)}
-                className="mt-2 block w-full rounded-xl px-4 py-3 transition-all duration-300 focus:ring-2 focus:ring-offset-2"
-                style={{
-                  color: themeColors.text,
-                  backgroundColor: themeColors.inputbg,
-                  border: `2px solid ${
-                    errors.room_number ? themeColors.danger : themeColors.border
-                  }`,
-                  boxShadow: `0 2px 8px ${themeColors.border}20`,
-                }}
-              />
-              {errors.room_number && (
-                <div className="text-xs text-red-500 mt-1">
-                  {errors.room_number}
-                </div>
-              )}
-            </div>
-            <div>
-              <label
-                className="block text-sm font-medium"
-                style={{ color: themeColors.heading }}
-              >
-                Floor Number *
-              </label>
-              <input
-                type="number"
-                required
-                value={formData.floor_number}
-                onChange={(e) => handleChange("floor_number", e.target.value)}
-                className="mt-2 block w-full rounded-xl px-4 py-3 transition-all duration-300 focus:ring-2 focus:ring-offset-2"
-                style={{
-                  color: themeColors.text,
-                  backgroundColor: themeColors.inputbg,
-                  border: `2px solid ${
-                    errors.floor_number
-                      ? themeColors.danger
-                      : themeColors.border
-                  }`,
-                  boxShadow: `0 2px 8px ${themeColors.border}20`,
-                }}
-              />
-              {errors.floor_number && (
-                <div className="text-xs text-red-500 mt-1">
-                  {errors.floor_number}
-                </div>
-              )}
+            {/* Room Number & Floor Number side by side */}
+            <div className="flex gap-2">
+              <div className="w-1/2">
+                <label
+                  className="block text-sm font-medium mb-1 flex items-center gap-2"
+                  style={{ color: themeColors.heading }}
+                >
+                  <Home
+                    className="h-5 w-5"
+                    style={{ color: themeColors.primary }}
+                  />
+                  Room Number *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.room_number}
+                  onChange={(e) => handleChange("room_number", e.target.value)}
+                  className="mt-2 block w-full rounded-lg pl-3 pr-3 py-2 text-base transition-all duration-200 focus:ring-2 focus:ring-offset-2"
+                  style={{
+                    color: themeColors.text,
+                    backgroundColor: themeColors.inputbg,
+                    border: `2px solid ${
+                      errors.room_number
+                        ? themeColors.danger
+                        : themeColors.border
+                    }`,
+                    boxShadow: `0 2px 8px ${themeColors.border}20`,
+                  }}
+                />
+                {errors.room_number && (
+                  <div className="text-xs text-red-500 mt-1">
+                    {errors.room_number}
+                  </div>
+                )}
+              </div>
+              <div className="w-1/2">
+                <label
+                  className="block text-sm font-medium mb-1 flex items-center gap-2"
+                  style={{ color: themeColors.heading }}
+                >
+                  <Building2
+                    className="h-5 w-5"
+                    style={{ color: themeColors.primary }}
+                  />
+                  Floor Number *
+                </label>
+                <input
+                  type="number"
+                  required
+                  value={formData.floor_number}
+                  onChange={(e) => handleChange("floor_number", e.target.value)}
+                  className="mt-2 block w-full rounded-lg pl-3 pr-3 py-2 text-base transition-all duration-200 focus:ring-2 focus:ring-offset-2"
+                  style={{
+                    color: themeColors.text,
+                    backgroundColor: themeColors.inputbg,
+                    border: `2px solid ${
+                      errors.floor_number
+                        ? themeColors.danger
+                        : themeColors.border
+                    }`,
+                    boxShadow: `0 2px 8px ${themeColors.border}20`,
+                  }}
+                />
+                {errors.floor_number && (
+                  <div className="text-xs text-red-500 mt-1">
+                    {errors.floor_number}
+                  </div>
+                )}
+              </div>
             </div>
             <div>
               <label
@@ -591,10 +447,10 @@ const AddDeviceModal = ({
               >
                 Tissue Type *
               </label>
-              <div className="flex gap-3 mt-2">
+              <div className="flex gap-2 mt-2">
                 <button
                   type="button"
-                  className="flex-1 px-4 py-3 rounded-xl border-2 transition-all duration-300 hover:scale-105 shadow-lg"
+                  className="flex-1 px-3 py-2 rounded-lg border transition-all duration-150 hover:bg-gray-200 dark:hover:bg-gray-700 text-base"
                   style={{
                     color:
                       formData.tissue_type === "hand_towel"
@@ -619,7 +475,7 @@ const AddDeviceModal = ({
                 </button>
                 <button
                   type="button"
-                  className="flex-1 px-4 py-3 rounded-xl border-2 transition-all duration-300 hover:scale-105 shadow-lg"
+                  className="flex-1 px-3 py-2 rounded-lg border transition-all duration-150 hover:bg-gray-200 dark:hover:bg-gray-700 text-base"
                   style={{
                     color:
                       formData.tissue_type === "toilet_paper"
@@ -652,10 +508,10 @@ const AddDeviceModal = ({
                 >
                   Rest Room Type *
                 </label>
-                <div className="flex gap-3 mt-2">
+                <div className="flex gap-2 mt-2">
                   <button
                     type="button"
-                    className="flex-1 px-4 py-3 rounded-xl border-2 transition-all duration-300 hover:scale-105 shadow-lg"
+                    className="flex-1 px-3 py-2 rounded-lg border transition-all duration-150 hover:bg-gray-200 dark:hover:bg-gray-700 text-base"
                     style={{
                       color:
                         formData.gender === "male" ? "white" : themeColors.text,
@@ -678,7 +534,7 @@ const AddDeviceModal = ({
                   </button>
                   <button
                     type="button"
-                    className="flex-1 px-4 py-3 rounded-xl border-2 transition-all duration-300 hover:scale-105 shadow-lg"
+                    className="flex-1 px-3 py-2 rounded-lg border transition-all duration-150 hover:bg-gray-200 dark:hover:bg-gray-700 text-base"
                     style={{
                       color:
                         formData.gender === "female"
@@ -711,12 +567,12 @@ const AddDeviceModal = ({
               >
                 Meter Capacity *
               </label>
-              <div className="flex gap-2 mt-2">
+              <div className="flex gap-1 mt-2">
                 {[500, 1000, 1500, 2000].map((preset) => (
                   <button
                     type="button"
                     key={preset}
-                    className="flex-1 px-3 py-2 rounded-xl border-2 transition-all duration-300 hover:scale-105 shadow-lg"
+                    className="flex-1 px-2 py-1 rounded-lg border transition-all duration-150 hover:bg-gray-200 dark:hover:bg-gray-700 text-base"
                     style={{
                       color:
                         formData.meter_capacity === preset
@@ -750,7 +606,7 @@ const AddDeviceModal = ({
                   onChange={(e) =>
                     handleChange("meter_capacity", e.target.value)
                   }
-                  className="w-24 px-3 py-2 rounded-xl border-2 transition-all duration-300 focus:ring-2 focus:ring-offset-2"
+                  className="w-20 px-2 py-1 rounded-lg border transition-all duration-150 focus:ring-2 focus:ring-offset-2 text-base"
                   style={{
                     color: themeColors.text,
                     backgroundColor: themeColors.inputbg,
@@ -775,11 +631,11 @@ const AddDeviceModal = ({
                 Reference value will be set to {formData.meter_capacity || 0}
               </div>
             </div>
-            <div className="flex gap-4 pt-4">
+            <div className="flex gap-2 pt-4">
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 px-6 py-3 rounded-xl transition-all duration-300 hover:scale-105 shadow-lg"
+                className="flex-1 px-4 py-2 rounded-lg transition-all duration-150 hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center text-base"
                 style={{
                   color: themeColors.text,
                   backgroundColor: themeColors.surface,
@@ -787,18 +643,23 @@ const AddDeviceModal = ({
                   boxShadow: `0 4px 15px ${themeColors.border}30`,
                 }}
               >
-                Cancel
+                <X className="h-5 w-5 mr-2" /> Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 px-6 py-3 rounded-xl transition-all duration-300 hover:scale-105 shadow-lg flex items-center justify-center disabled:opacity-50"
+                className="flex-1 px-4 py-2 rounded-lg transition-all duration-150 hover:bg-orange-600/80 flex items-center justify-center disabled:opacity-50 font-semibold text-base"
                 style={{
-                  background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.accent} 100%)`,
+                  background: themeColors.primary,
+                  color: "#fff",
                   boxShadow: `0 4px 15px ${themeColors.primary}40`,
                 }}
               >
-                {loading && <Loader className="h-5 w-5 mr-2 animate-spin" />}
+                {loading ? (
+                  <Spinner size={20} color="#fff" className="mr-2" />
+                ) : (
+                  <Plus className="h-5 w-5 mr-2" />
+                )}
                 {editingDevice ? "Update Device" : "Add Device"}
               </button>
             </div>
@@ -814,18 +675,101 @@ const DeviceCard = ({ device, onEdit, onDelete }) => {
   const { themeColors, isDark } = useTheme();
   // Only render if device has a valid id
   if (!device || !device.id) return null;
+
+  // Format added date (assume device.created_at or device.added_date)
+  let addedDate = null;
+  if (device.created_at) {
+    try {
+      const dateObj = new Date(device.created_at);
+      addedDate = dateObj.toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    } catch {
+      // ignore date parse error
+    }
+  } else if (device.added_date) {
+    try {
+      const dateObj = new Date(device.added_date);
+      addedDate = dateObj.toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    } catch {
+      // ignore date parse error
+    }
+  }
+
+  // Rest room type label and icon
+  let restRoomType = null;
+  let restRoomIcon = null;
+  if (device.tissue_type === "toilet_paper") {
+    if (device.gender === "female") {
+      restRoomType = "Women Rest Room";
+      // Female icon (Venus symbol)
+      restRoomIcon = (
+        <svg
+          className="h-4 w-4 mr-1 text-pink-500"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx="12" cy="8" r="5" />
+          <line x1="12" y1="13" x2="12" y2="21" />
+          <line x1="9" y1="18" x2="15" y2="18" />
+        </svg>
+      );
+    } else {
+      restRoomType = "Men Rest Room";
+      // Male icon (Mars symbol)
+      restRoomIcon = (
+        <svg
+          className="h-4 w-4 mr-1 text-blue-500"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx="10" cy="14" r="5" />
+          <line x1="19" y1="5" x2="14.65" y2="9.35" />
+          <line x1="19" y1="5" x2="19" y2="10" />
+          <line x1="19" y1="5" x2="14" y2="5" />
+        </svg>
+      );
+    }
+  }
+
   return (
     <div
-      className="rounded-2xl shadow-lg p-7 mb-6 flex items-center justify-between bg-gradient-to-tr from-blue-50 via-white to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 border border-gray-200 dark:border-gray-700 transition-transform duration-200 hover:scale-[1.02] hover:shadow-2xl group"
-      style={{ color: themeColors.text }}
+      className="rounded-xl shadow-2xl w-full max-w-5xl mx-auto border transition-all duration-300 mb-7 flex flex-col md:flex-row items-stretch md:items-stretch group overflow-hidden"
+      style={{
+        minHeight: "180px",
+        maxHeight: "260px",
+        width: "100%",
+        maxWidth: "1200px",
+        background: `linear-gradient(120deg, ${themeColors.surface} 70%, ${themeColors.card} 100%)`,
+        border: `2px solid ${themeColors.border}`,
+        boxShadow: `0 20px 40px ${themeColors.border}30`,
+        color: themeColors.text,
+        borderRadius: 18,
+        padding: 0,
+      }}
     >
-      <div className="flex items-center space-x-5">
+      <div className="flex flex-col md:flex-row items-center md:items-stretch space-y-4 md:space-y-0 md:space-x-6 z-10 w-full p-8 md:p-10">
         <div
-          className="h-14 w-14 rounded-full flex items-center justify-center shadow-md bg-white/70 dark:bg-gray-900/70 group-hover:scale-110 transition-transform duration-200"
+          className="h-14 w-14 rounded-xl flex items-center justify-center shadow-lg bg-white/70 dark:bg-gray-900/70 transition-transform duration-200 border-2 mr-0 md:mr-6"
           style={{
             background: isDark
               ? themeColors.primary + "22"
               : themeColors.primary + "11",
+            borderColor: themeColors.primary,
           }}
         >
           <Smartphone
@@ -833,33 +777,87 @@ const DeviceCard = ({ device, onEdit, onDelete }) => {
             style={{ color: themeColors.primary }}
           />
         </div>
-        <div>
-          <h3 className="text-xl font-bold" style={{ color: themeColors.text }}>
-            {device.name || device.device_name || `Device ${device.id}`}
-          </h3>
-          <p className="text-base" style={{ color: themeColors.muted }}>
-            {device.room_number} • Floor {device.floor_number}
-          </p>
+        <div className="flex-1 min-w-0 flex flex-col justify-center md:justify-between">
+          <div className="flex flex-wrap items-center gap-3 mb-2">
+            <h3
+              className="text-2xl font-extrabold truncate"
+              style={{ color: themeColors.primary }}
+            >
+              {device.name || device.device_name || `Device ${device.id}`}
+            </h3>
+            <span
+              className="text-xs font-semibold px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-300"
+              title="Device ID"
+            >
+              ID: {device.id}
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-3 items-center text-base mt-1">
+            <span className="inline-flex items-center font-medium text-gray-700 dark:text-gray-300 px-3 py-1 rounded-lg bg-blue-50 dark:bg-blue-900/40">
+              <Home className="h-4 w-4 mr-1 text-blue-400" />
+              Room {device.room_number}
+            </span>
+            <span className="inline-flex items-center font-medium text-gray-700 dark:text-gray-300 px-3 py-1 rounded-lg bg-purple-50 dark:bg-purple-900/40">
+              <Building2 className="h-4 w-4 mr-1 text-purple-400" />
+              Floor {device.floor_number}
+            </span>
+            {restRoomType && (
+              <span
+                className="inline-flex items-center font-medium px-3 py-1 rounded-lg bg-yellow-50 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 border border-yellow-200 dark:border-yellow-700"
+                style={{
+                  fontWeight: 500,
+                  letterSpacing: 0.2,
+                }}
+              >
+                {restRoomIcon}
+                {restRoomType}
+              </span>
+            )}
+            {addedDate && (
+              <span
+                className="inline-flex items-center font-medium px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                style={{
+                  fontWeight: 500,
+                  letterSpacing: 0.2,
+                }}
+              >
+                <Calendar className="h-4 w-4 mr-1 text-slate-400" />
+                {addedDate}
+              </span>
+            )}
+          </div>
         </div>
-      </div>
-      <div className="flex items-center space-x-3">
-        <button
-          onClick={() => onEdit(device)}
-          className="hover:scale-110 hover:bg-blue-100 dark:hover:bg-blue-900 p-2 rounded-full transition-all duration-200"
-          style={{ color: themeColors.primary }}
-        >
-          <Edit className="h-5 w-5" />
-        </button>
-        {/* Only show delete button if device has a valid id */}
-        {device.id && (
+        <div className="flex flex-col items-end justify-between ml-0 md:ml-6 gap-3 md:gap-4">
           <button
-            onClick={() => onDelete(device)}
-            className="hover:scale-110 hover:bg-red-100 dark:hover:bg-red-900 p-2 rounded-full transition-all duration-200"
-            style={{ color: themeColors.danger }}
+            onClick={() => onEdit(device)}
+            className="hover:scale-110 p-3 rounded-full transition-all duration-200 border shadow-md"
+            style={{
+              color: themeColors.primary,
+              borderColor: themeColors.primary,
+              backgroundColor: "transparent",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor =
+                themeColors.primary + "15";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "transparent";
+            }}
+            title="Edit Device"
           >
-            <Trash2 className="h-5 w-5" />
+            <Edit className="h-5 w-5" />
           </button>
-        )}
+          {device.id && (
+            <button
+              onClick={() => onDelete(device)}
+              className="hover:scale-110 hover:bg-red-100 dark:hover:bg-red-900 p-3 rounded-full transition-all duration-200 border border-red-200 dark:border-red-700 shadow-md"
+              style={{ color: themeColors.danger }}
+              title="Delete Device"
+            >
+              <Trash2 className="h-5 w-5" />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -1246,24 +1244,7 @@ const Devices = () => {
     [accessToken, deleteDevice, fetchDevices]
   );
 
-  // Handle delete confirmation - matches mobile app's delete confirmation
-  const handleDeleteDeviceConfirm = useCallback((device) => {
-    setModalContent({
-      title: "Delete Device",
-      message: `Are you sure you want to delete \"${device.name}\"?`,
-      type: "error",
-      primaryAction: {
-        text: "Delete",
-        onPress: () => confirmDeleteDevice(device),
-      },
-      secondaryAction: {
-        text: "Cancel",
-        onPress: () => setShowDeleteConfirmModal(false),
-      },
-    });
-    setShowDeleteConfirmModal(true);
-  }, []);
-
+  // Move confirmDeleteDevice above handleDeleteDeviceConfirm to fix ReferenceError
   const confirmDeleteDevice = useCallback(
     async (device) => {
       setShowDeleteConfirmModal(false);
@@ -1295,6 +1276,27 @@ const Devices = () => {
       }
     },
     [handleDeviceDelete]
+  );
+
+  // Handle delete confirmation - matches mobile app's delete confirmation
+  const handleDeleteDeviceConfirm = useCallback(
+    (device) => {
+      setModalContent({
+        title: "Delete Device",
+        message: `Are you sure you want to delete "${device.name}"?`,
+        type: "error",
+        primaryAction: {
+          text: "Delete",
+          onPress: () => confirmDeleteDevice(device),
+        },
+        secondaryAction: {
+          text: "Cancel",
+          onPress: () => setShowDeleteConfirmModal(false),
+        },
+      });
+      setShowDeleteConfirmModal(true);
+    },
+    [confirmDeleteDevice]
   );
 
   // Handle edit device - matches mobile app's edit handler
@@ -1345,7 +1347,10 @@ const Devices = () => {
       {/* Header - matches mobile app's header */}
       <div className="md:flex md:items-center md:justify-between">
         <div className="flex-1 min-w-0">
-          <h2 className="text-3xl font-extrabold leading-7 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 bg-clip-text text-transparent sm:text-4xl animate-gradient-x">
+          <h2
+            className="text-3xl font-extrabold leading-7 sm:text-4xl"
+            style={{ color: themeColors.primary }}
+          >
             Device Management
           </h2>
           <p className="mt-2 text-base text-gray-500 dark:text-gray-300">
@@ -1357,7 +1362,7 @@ const Devices = () => {
             onClick={handleAddDevice}
             className="inline-flex items-center px-6 py-3 border-none rounded-xl shadow-lg text-sm font-semibold text-white transition-all duration-300 focus:ring-2 focus:ring-offset-2 hover:scale-105"
             style={{
-              background: `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.accent} 100%)`,
+              background: themeColors.primary,
               boxShadow: `0 4px 15px ${themeColors.primary}40`,
             }}
           >
@@ -1397,15 +1402,30 @@ const Devices = () => {
       </div>
 
       {/* Search - matches mobile app's search */}
-      <div className="bg-white/80 dark:bg-gray-800/80 shadow-lg rounded-2xl p-7 backdrop-blur-md">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-blue-400" />
+      <div className="w-full flex justify-center">
+        <div className="relative w-full max-w-7xl">
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6  z-10" />
           <input
             type="text"
             placeholder="Search devices by name, room, or floor..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-12 pr-4 py-3 w-full border-none rounded-xl bg-white/70 dark:bg-gray-800/70 shadow-inner focus:ring-2 focus:ring-blue-400 dark:focus:ring-purple-400 transition-all duration-200 text-gray-900 dark:text-white text-base"
+            className="pl-14 pr-4 py-3 w-full rounded-md border-2 focus:outline-none transition-all duration-200 text-lg shadow-lg"
+            style={{
+              background: `${themeColors.surface}cc`,
+              borderColor: themeColors.border,
+              boxShadow: "0 2px 8px " + themeColors.border + "20",
+              backdropFilter: "blur(18px)",
+              WebkitBackdropFilter: "blur(18px)",
+              color: themeColors.text,
+              borderRadius: 5,
+            }}
+            onFocus={(e) =>
+              (e.target.style.boxShadow = `0 0 0 3px ${themeColors.primary}55`)
+            }
+            onBlur={(e) =>
+              (e.target.style.boxShadow = `0 2px 8px ${themeColors.border}20`)
+            }
           />
         </div>
       </div>
@@ -1414,7 +1434,11 @@ const Devices = () => {
       <div className="space-y-4">
         {storeLoading && !refreshing ? (
           <div className="text-center py-12">
-            <Loader className="mx-auto h-8 w-8 text-blue-600 animate-spin" />
+            <Spinner
+              size={32}
+              color={themeColors.primary}
+              className="mx-auto"
+            />
             <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
               Loading devices...
             </p>
@@ -1472,6 +1496,8 @@ const Devices = () => {
         type={modalContent.type}
         primaryAction={modalContent.primaryAction}
         secondaryAction={modalContent.secondaryAction}
+        themeColors={themeColors}
+        isDark={themeColors?.surface && themeColors.surface !== "#ffffff"}
       />
 
       <CustomAlert
@@ -1482,6 +1508,8 @@ const Devices = () => {
         type={modalContent.type}
         primaryAction={modalContent.primaryAction}
         secondaryAction={modalContent.secondaryAction}
+        themeColors={themeColors}
+        isDark={themeColors?.surface && themeColors.surface !== "#ffffff"}
       />
 
       <CustomAlert
@@ -1492,6 +1520,8 @@ const Devices = () => {
         type={modalContent.type}
         primaryAction={modalContent.primaryAction}
         secondaryAction={modalContent.secondaryAction}
+        themeColors={themeColors}
+        isDark={themeColors?.surface && themeColors.surface !== "#ffffff"}
       />
     </div>
   );
