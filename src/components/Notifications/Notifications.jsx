@@ -27,6 +27,7 @@ const NotificationItem = React.memo(
     onMarkAsRead,
     // onDelete, // not used in web
     isDark,
+    themeColors,
   }) {
     const [isAnimated, setIsAnimated] = useState(false);
     const [isMarking, setIsMarking] = useState(false);
@@ -135,27 +136,23 @@ const NotificationItem = React.memo(
       >
         <div
           className={`relative rounded-2xl border-2 shadow-lg overflow-hidden transition-all cursor-pointer
-            ${
+            border-${
               item.is_read
                 ? isDark
-                  ? "bg-gray-900 border-gray-800"
-                  : "bg-white border-gray-200"
-                : isDark
-                ? `bg-gray-800 border-${notificationConfig.borderColor}`
-                : `bg-${notificationConfig.bgLight} border-${notificationConfig.borderColor}`
+                  ? "gray-800"
+                  : "gray-200"
+                : notificationConfig.borderColor
             }
             ${item.is_read ? "opacity-80" : "opacity-100"}
             hover:shadow-xl hover:scale-[1.02]
           `}
           style={{
+            backgroundColor: themeColors.surface,
             borderColor: item.is_read
-              ? undefined
+              ? isDark
+                ? "#1f2937" // gray-800
+                : "#e5e7eb" // gray-200
               : notificationConfig.borderColor,
-            backgroundColor: item.is_read
-              ? undefined
-              : isDark
-              ? notificationConfig.bgDark
-              : notificationConfig.bgLight,
           }}
           onClick={handlePress}
         >
@@ -195,11 +192,7 @@ const NotificationItem = React.memo(
 
               <div className="flex-1 mr-2">
                 <div className="flex items-start justify-between mb-1">
-                  <h3
-                    className={`font-bold text-base ${
-                      isDark ? "text-white" : "text-gray-900"
-                    } line-clamp-2`}
-                  >
+                  <h3 className="font-bold text-base text-white line-clamp-2">
                     {item.title || "Device Alert"}
                   </h3>
                   {!item.is_read && (
@@ -219,21 +212,13 @@ const NotificationItem = React.memo(
                       isDark ? "border-gray-700" : "border-gray-200"
                     }`}
                   >
-                    <p
-                      className={`text-sm font-medium ${
-                        isDark ? "text-gray-300" : "text-gray-700"
-                      } line-clamp-1`}
-                    >
+                    <p className="text-sm font-medium text-white line-clamp-1">
                       {item.device.name ||
                         `Device ${item.device.device_id || item.device.id}`}
                     </p>
                     <div className="flex items-center mt-1">
                       <MapPin size={12} className="text-green-500 mr-1" />
-                      <span
-                        className={`text-xs ${
-                          isDark ? "text-gray-400" : "text-gray-600"
-                        }`}
-                      >
+                      <span className="text-xs text-white">
                         Room {item.device.room_number || "N/A"} • Floor{" "}
                         {item.device.floor_number || "N/A"}
                       </span>
@@ -386,11 +371,17 @@ export default function NotificationsScreen() {
   if (isLoading && !hasLoaded) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[300px] py-12">
-        <Spinner size={60} color="#2563eb" />
-        <div className="mt-6 text-lg font-semibold text-blue-700">
+        <Spinner color={themeColors.primary} />
+        <div
+          className="mt-6 text-lg font-semibold"
+          style={{ color: themeColors.primary }}
+        >
           Loading Notifications
         </div>
-        <div className="text-sm text-gray-500 mt-1">
+        <div
+          className="text-sm mt-1"
+          style={{ color: themeColors.textSecondary }}
+        >
           Fetching your latest updates...
         </div>
       </div>
@@ -403,7 +394,7 @@ export default function NotificationsScreen() {
     <div
       className="min-h-screen w-full flex flex-col relative bg-transparent"
       style={{
-        background: themeColors.bg,
+        background: themeColors.background,
         minHeight: "100vh",
       }}
     >
@@ -429,10 +420,14 @@ export default function NotificationsScreen() {
           {sortedNotifications.length > 0 && (
             <button
               onClick={handleMarkAllAsRead}
-              className="p-2 rounded-xl transition-colors border border-blue-800 bg-blue-900/30 hover:bg-blue-900/50"
+              className="p-2 rounded-xl transition-colors border"
+              style={{
+                borderColor: themeColors.primary,
+                background: themeColors.primary + "20",
+              }}
               title="Mark all as read"
             >
-              <CheckCircle2 size={22} className="text-blue-600" />
+              <CheckCircle2 size={22} style={{ color: themeColors.primary }} />
             </button>
           )}
         </div>
@@ -491,6 +486,7 @@ export default function NotificationsScreen() {
                   index={index}
                   onMarkAsRead={handleMarkAsRead}
                   isDark={isDark}
+                  themeColors={themeColors}
                 />
               ))}
               <div className="text-center mt-8">

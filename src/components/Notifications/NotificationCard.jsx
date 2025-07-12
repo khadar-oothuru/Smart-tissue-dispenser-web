@@ -1,21 +1,21 @@
 // NotificationCard.jsx
 import React from "react";
-import { 
-  Bell, 
-  Shield, 
-  Archive, 
-  Wrench, 
-  X, 
+import {
+  Bell,
+  Shield,
+  Archive,
+  Wrench,
+  X,
   Smartphone,
   Clock,
   CheckCircle,
-  Trash2
+  Trash2,
 } from "lucide-react";
 
 // Icon component that renders the appropriate icon
 const NotificationIcon = ({ name, color, size = 24 }) => {
   const iconProps = { size, color, className: "flex-shrink-0" };
-  
+
   const iconMap = {
     bell: <Bell {...iconProps} />,
     "shield-alert": <Shield {...iconProps} />,
@@ -34,21 +34,18 @@ export const NotificationCard = ({
   className = "",
 }) => {
   const { title, body, data = {}, timestamp } = notification;
-  const {
-    iconName = "bell",
-    iconColor = "#3AB0FF",
-    type = "default",
-  } = data;
+  const { iconName = "bell", iconColor = "#3AB0FF", type = "default" } = data;
 
   // Get notification type styling
   const getTypeStyle = (type) => {
+    // Use neutral surface colors for all types, only border color changes
     const styles = {
-      tamper: "bg-purple-50 border-l-4 border-purple-600",
-      empty: "bg-red-50 border-l-4 border-red-600",
-      low: "bg-orange-50 border-l-4 border-orange-500",
-      full: "bg-green-50 border-l-4 border-green-500",
-      maintenance: "bg-blue-50 border-l-4 border-blue-500",
-      default: "bg-gray-50 border-l-4 border-sky-500",
+      tamper: "bg-[var(--surface)] border-l-4 border-purple-600",
+      empty: "bg-[var(--surface)] border-l-4 border-red-600",
+      low: "bg-[var(--surface)] border-l-4 border-orange-500",
+      full: "bg-[var(--surface)] border-l-4 border-green-500",
+      maintenance: "bg-[var(--surface)] border-l-4 border-blue-500",
+      default: "bg-[var(--surface)] border-l-4 border-gray-200",
     };
     return styles[type] || styles.default;
   };
@@ -60,7 +57,7 @@ export const NotificationCard = ({
       low: "text-orange-700",
       full: "text-green-700",
       maintenance: "text-blue-700",
-      default: "text-blue-700",
+      default: "text-gray-800",
     };
     return colors[type] || colors.default;
   };
@@ -68,30 +65,34 @@ export const NotificationCard = ({
   const typeStyle = getTypeStyle(type);
   const titleColor = getTitleColor(type);
 
+  // Use CSS variable for surface color (set in global theme)
   return (
     <div
-      className={`rounded-xl shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden ${typeStyle} ${className}`}
+      className={`rounded-lg shadow-sm hover:shadow transition-shadow duration-200 ease-in-out cursor-pointer overflow-hidden ${typeStyle} ${className}`}
+      style={{
+        maxWidth: 360,
+        background: "var(--surface, #fff)",
+        transition: "box-shadow 0.2s cubic-bezier(0.4,0,0.2,1)",
+      }}
       onClick={onPress}
     >
-      <div className="p-4">
-        <div className="flex items-start mb-2">
-          <div className="mr-3 mt-1">
-            <div className="w-10 h-10 rounded-lg bg-white/50 flex items-center justify-center">
-              <NotificationIcon name={iconName} color={iconColor} size={28} />
+      <div className="p-3">
+        <div className="flex items-start mb-1.5">
+          <div className="mr-2 mt-0.5">
+            <div className="w-8 h-8 rounded-md bg-white/70 flex items-center justify-center">
+              <NotificationIcon name={iconName} color={iconColor} size={22} />
             </div>
           </div>
-          
           <div className="flex-1">
-            <h3 className={`font-semibold text-base leading-tight ${titleColor}`}>
+            <h3 className={`font-semibold text-sm leading-tight ${titleColor}`}>
               {title}
             </h3>
             {timestamp && (
-              <span className="text-xs text-gray-500 mt-1">
+              <span className="text-xs text-gray-400 mt-0.5">
                 {new Date(timestamp).toLocaleTimeString()}
               </span>
             )}
           </div>
-          
           {onDismiss && (
             <button
               onClick={(e) => {
@@ -100,21 +101,21 @@ export const NotificationCard = ({
               }}
               className="p-1 hover:bg-gray-200 rounded-md transition-colors"
             >
-              <X size={20} className="text-gray-600" />
+              <X size={18} className="text-gray-500" />
             </button>
           )}
         </div>
-
-        <p className="text-gray-700 text-sm leading-relaxed ml-13 line-clamp-3">
+        <p className="text-white text-xs leading-relaxed ml-10 line-clamp-3">
           {body}
         </p>
-
         {data.device_name && (
-          <div className="flex items-center mt-3 ml-13 text-xs text-gray-600">
-            <Smartphone size={14} className="mr-1" />
+          <div className="flex items-center mt-2 ml-10 text-xs text-gray-500">
+            <Smartphone size={12} className="mr-1" />
             <span>
               {data.device_name}
-              {data.room && data.floor && ` • Room ${data.room}, Floor ${data.floor}`}
+              {data.room &&
+                data.floor &&
+                ` • Room ${data.room}, Floor ${data.floor}`}
             </span>
           </div>
         )}
