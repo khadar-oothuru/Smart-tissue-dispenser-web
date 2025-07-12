@@ -13,9 +13,11 @@ import {
   XCircle,
   UserCog,
 } from "lucide-react";
+
 import RoleChangeModal from "./RoleChangeModal";
 import UserProfileModal from "./UserProfileModal";
 import UserItem from "./UserItem";
+import { CustomAlert } from "../common/CustomAlert";
 
 import adminService from "../../services/AdminService";
 
@@ -34,6 +36,10 @@ const UserManagement = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Custom Alert state for delete
+  const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+  const [pendingDeleteUserId, setPendingDeleteUserId] = useState(null);
   // Only show user cards, no view mode
 
   // Users state from API
@@ -138,7 +144,9 @@ const UserManagement = () => {
   });
 
   // Filter users based on search and filters, and exclude the logged-in user
-  const filteredUsers = users.filter((u) => {
+  // If a user was just updated (role change), always show them at the top, even if they don't match the filter
+  const [lastUpdatedUserId, setLastUpdatedUserId] = useState(null);
+  const filteredUsersRaw = users.filter((u) => {
     // Exclude the logged-in user
     if (user && (u.id === user.id || u.username === user.username))
       return false;
@@ -154,6 +162,19 @@ const UserManagement = () => {
 
     return matchesSearch && matchesRole && matchesStatus;
   });
+
+  let filteredUsers = filteredUsersRaw;
+  if (lastUpdatedUserId) {
+    const updatedUser = users.find((u) => u.id === lastUpdatedUserId);
+    if (updatedUser) {
+      const alreadyInList = filteredUsersRaw.some(
+        (u) => u.id === lastUpdatedUserId
+      );
+      if (!alreadyInList) {
+        filteredUsers = [updatedUser, ...filteredUsersRaw];
+      }
+    }
+  }
 
   // Handle user selection
   const handleSelectUser = (userId) => {
@@ -212,19 +233,28 @@ const UserManagement = () => {
     }
   };
 
-  const handleDeleteUser = async (userId) => {
-    if (!window.confirm("Are you sure you want to delete this user?")) return;
+  const handleDeleteUser = (userId) => {
+    setPendingDeleteUserId(userId);
+    setShowDeleteAlert(true);
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!pendingDeleteUserId) return;
     try {
       setLoading(true);
       setError(null);
       adminService.setAuthContext({ accessToken, user });
-      await adminService.deleteUser(userId);
-      setUsers((prev) => prev.filter((u) => u.id !== userId));
-      setSelectedUsers((prev) => prev.filter((id) => id !== userId));
+      await adminService.deleteUser(pendingDeleteUserId);
+      setUsers((prev) => prev.filter((u) => u.id !== pendingDeleteUserId));
+      setSelectedUsers((prev) =>
+        prev.filter((id) => id !== pendingDeleteUserId)
+      );
     } catch (err) {
       setError(err.message || "Failed to delete user");
     } finally {
       setLoading(false);
+      setShowDeleteAlert(false);
+      setPendingDeleteUserId(null);
     }
   };
 
@@ -274,11 +304,11 @@ const UserManagement = () => {
       setError(null);
       adminService.setAuthContext({ accessToken, user });
       const updatedUser = await adminService.updateUserRole(userId, newRole);
-      setUsers((prev) => prev.map((u) => (u.id === userId ? updatedUser : u)));
-      // If the current filterRole would hide the updated user, update the filter to the new role BEFORE closing the modal
-      if (filterRole !== "all" && filterRole !== newRole) {
-        setFilterRole(newRole);
-      }
+      console.log("Updated user after role change:", updatedUser);
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, ...updatedUser } : u))
+      );
+      setLastUpdatedUserId(userId); // Mark this user as last updated
       setShowRoleModal(false);
     } catch (err) {
       setError(err.message || "Failed to update user role");
@@ -286,6 +316,10 @@ const UserManagement = () => {
       setLoading(false);
     }
   };
+  // Reset lastUpdatedUserId when filters or search change
+  useEffect(() => {
+    setLastUpdatedUserId(null);
+  }, [searchTerm, filterRole, filterStatus]);
 
   const handleViewProfile = (user) => {
     setSelectedUser(user);
@@ -358,6 +392,30 @@ const UserManagement = () => {
 
   return (
     <div className="space-y-6">
+      {/* Custom Alert for Delete User */}
+      <CustomAlert
+        visible={showDeleteAlert}
+        onClose={() => {
+          setShowDeleteAlert(false);
+          setPendingDeleteUserId(null);
+        }}
+        title="Delete User?"
+        message="Are you sure you want to delete this user? This action cannot be undone."
+        type="error"
+        primaryAction={{
+          text: loading ? "Deleting..." : "Delete",
+          onPress: confirmDeleteUser,
+        }}
+        secondaryAction={{
+          text: "Cancel",
+          onPress: () => {
+            setShowDeleteAlert(false);
+            setPendingDeleteUserId(null);
+          },
+        }}
+        themeColors={themeColors}
+        isDark={document.documentElement.classList.contains("dark")}
+      />
       {/* Header */}
       <div className="md:flex md:items-center md:justify-between">
         <div className="flex-1 min-w-0">
@@ -368,21 +426,7 @@ const UserManagement = () => {
             Manage system users, roles, and permissions
           </p>
         </div>
-        <div className="mt-4 flex space-x-3 md:mt-0 md:ml-4">
-          {/*
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
-          >
-            <UserPlus className="h-4 w-4 mr-2" />
-            Add User
-          </button>
-          <button className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </button>
-          */}
-        </div>
+        <div className="mt-4 flex space-x-3 md:mt-0 md:ml-4"></div>
       </div>
 
       {/* Stats Cards */}
@@ -422,15 +466,7 @@ const UserManagement = () => {
       </div>
 
       {/* Search and Filters */}
-      <div
-        className="shadow rounded-3xl p-8 backdrop-blur-xl border"
-        style={{
-          background: themeColors.glassBg || "rgba(40,40,60,0.35)",
-          borderColor: themeColors.glassBorder || "rgba(200,200,255,0.18)",
-          boxShadow:
-            themeColors.glassShadow || "0 8px 32px 0 rgba(31, 38, 135, 0.18)",
-        }}
-      >
+      <div className="shadow rounded-3xl p-8 backdrop-blur-xl" style={{}}>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {/* Search */}
           <div className="relative">

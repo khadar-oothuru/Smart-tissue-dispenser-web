@@ -1349,7 +1349,7 @@ const Devices = () => {
         <div className="flex-1 min-w-0">
           <h2
             className="text-3xl font-extrabold leading-7 sm:text-4xl"
-            style={{ color: themeColors.primary }}
+            style={{ color: "#fff" }}
           >
             Device Management
           </h2>

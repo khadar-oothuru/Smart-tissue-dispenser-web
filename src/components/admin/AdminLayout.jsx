@@ -18,6 +18,7 @@ import {
   Users,
   ChevronRight,
   Contact,
+  Bell,
 } from "lucide-react";
 
 const AdminLayout = ({ children }) => {
@@ -140,6 +141,18 @@ const AdminLayout = ({ children }) => {
           </div>
 
           <div className="flex items-center gap-6 pr-8">
+            {/* Bell Icon (Notification) */}
+            <button
+              type="button"
+              className="hidden sm:flex items-center justify-center w-11 h-11 rounded-full bg-[var(--color-background)] border border-[var(--color-border)] hover:bg-[var(--color-primary)] hover:text-white hover:border-[var(--color-primary)] transition-all duration-200 cursor-pointer"
+              style={{ outline: "none", border: "none" }}
+              aria-label="Notifications"
+              tabIndex={0}
+              onClick={() => {}}
+            >
+              <Bell className="h-6 w-6" />
+            </button>
+
             <div className="hidden sm:block text-right">
               <button
                 type="button"
@@ -165,7 +178,6 @@ const AdminLayout = ({ children }) => {
               </button>
             </div>
 
-            {/* Removed inline CSS for waving hand animation */}
             {/* Profile Image with Primary Background */}
             <div className="relative">
               {user?.profile_picture ? (
@@ -207,7 +219,7 @@ const SidebarContent = ({
       {/* Header */}
       <div className="flex items-center justify-between px-6 h-16 border-b border-[var(--color-border)] flex-shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] rounded-xl flex items-center justify-center">
+          <div className="w-10 h-10 bg-[var(--color-primary)] rounded-xl flex items-center justify-center">
             <Shield className="h-6 w-6 text-white" />
           </div>
           <div>
@@ -230,9 +242,6 @@ const SidebarContent = ({
 
       {/* Navigation */}
       <nav className="flex-1 px-4 py-5 overflow-y-auto">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted)] mb-4 px-3 opacity-60">
-          Navigation
-        </p>
         <div className="flex flex-col gap-4">
           {navigation.map((item) => {
             const Icon = item.icon;
@@ -294,6 +303,11 @@ const SidebarContent = ({
 
       {/* Footer - Only Sign Out Button */}
       <div className="px-4 py-4 border-t border-[var(--color-border)]">
+        <div className="flex items-center justify-center gap-2 my-4 text-[var(--color-muted)] text-xs font-semibold">
+          <Shield className="h-4 w-4 text-[var(--color-primary)]" />
+          <span>Brought by Jivaass Technologies</span>
+        </div>
+
         <button
           onClick={handleLogout}
           className="flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-red-500 hover:bg-red-600 rounded-lg text-white text-sm font-medium cursor-pointer transition-all duration-200"

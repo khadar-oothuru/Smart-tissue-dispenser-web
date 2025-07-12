@@ -223,8 +223,6 @@ const AdminDashboard = () => {
     const totalDevices = Array.isArray(mergedDevices)
       ? mergedDevices.length
       : 0;
-    let activeDevices = 0;
-    let offlineDevices = 0;
     let powerOffDevices = 0;
     let lowBatteryDevices = 0;
     let emptyDevices = 0;
@@ -234,11 +232,44 @@ const AdminDashboard = () => {
     let totalTissueAlerts = 0;
     let powerTotalAlertsCount = 0;
 
-    mergedDevices.forEach((device) => {
-      // Active/Offline
-      if (device.is_active) activeDevices += 1;
-      else offlineDevices += 1;
+    // --- Mobile app logic for active/offline/no-power ---
+    // Helper functions
+    const isPowerOff = (powerStatus) => {
+      if (powerStatus === null || powerStatus === undefined) return false;
+      const status = String(powerStatus).trim().toLowerCase();
+      return ["off", "none", "", "0", "false"].includes(status);
+    };
+    const isNoPower = (powerStatus) => {
+      if (powerStatus === null || powerStatus === undefined) return false;
+      const status = String(powerStatus).trim().toLowerCase();
+      return status === "no";
+    };
 
+    // Merge logic for active/offline/no-power
+    const offlineDevicesArr = mergedDevices.filter((d) => {
+      const status = (d.current_status || d.status || "").toLowerCase();
+      const pwr = (d.pwrstatus || d.power_status || "").toLowerCase();
+      return (
+        ["offline", "disconnected", "inactive", "unknown"].includes(status) ||
+        isPowerOff(pwr)
+      );
+    });
+    const activeDevicesArr = mergedDevices.filter((d) => {
+      const status = (d.current_status || d.status || "").toLowerCase();
+      const pwr = (d.pwrstatus || d.power_status || "").toLowerCase();
+      return (
+        !["offline", "disconnected", "inactive", "unknown"].includes(status) &&
+        !isPowerOff(pwr) &&
+        !isNoPower(pwr)
+      );
+    });
+    const noPowerDevicesArr = mergedDevices.filter((d) => {
+      const pwr = (d.pwrstatus || d.power_status || "").toLowerCase();
+      return isNoPower(pwr);
+    });
+
+    // Other stats
+    mergedDevices.forEach((device) => {
       // Power Off
       if (
         device.power_status === false ||
@@ -275,7 +306,7 @@ const AdminDashboard = () => {
     // System health logic (unified)
     let systemHealth = "Unknown";
     if (totalDevices > 0) {
-      const activePercentage = (activeDevices / totalDevices) * 100;
+      const activePercentage = (activeDevicesArr.length / totalDevices) * 100;
       const criticalPercentage = (criticalDevices / totalDevices) * 100;
       if (activePercentage >= 90 && criticalPercentage < 5)
         systemHealth = "Excellent";
@@ -290,8 +321,9 @@ const AdminDashboard = () => {
 
     return {
       totalDevices,
-      activeDevices,
-      offlineDevices,
+      activeDevices: activeDevicesArr.length,
+      offlineDevices: offlineDevicesArr.length,
+      noPowerDevices: noPowerDevicesArr.length,
       powerOffDevices,
       lowBatteryDevices,
       emptyDevices,
@@ -863,9 +895,6 @@ const AdminDashboard = () => {
     };
   }, [realtimeStatus]);
 
-  // Enhanced Device Card Component
-  // Enhanced Device Card Component
-  // Theme-aware DeviceCard
   const DeviceCard = ({ device }) => {
     const getStatusColor = (status) => {
       switch (status?.toLowerCase()) {
@@ -893,7 +922,8 @@ const AdminDashboard = () => {
         className="rounded-2xl p-4 shadow-lg border transition-all duration-300 hover:shadow-xl"
         style={{
           background: themeColors.surface,
-          borderColor: themeColors.border,
+          borderColor: themeColors.primary,
+          borderWidth: 2,
           boxShadow: `0 4px 12px ${themeColors.shadow}20`,
         }}
       >
@@ -968,7 +998,7 @@ const AdminDashboard = () => {
   const AlertToggle = () => {
     return (
       <div
-        className="rounded-3xl p-6 shadow-lg border mb-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+        className="rounded-3xl p-6 shadow-lg border mb-6 transition-all duration-300 hover:shadow-xl "
         style={{
           background: themeColors.surface,
           borderColor: themeColors.border,
@@ -1128,17 +1158,17 @@ const AdminDashboard = () => {
           color: themeColors.danger,
         },
         {
+          title: "Battery Off",
+          value:
+            alertDistributionData.find((d) => d.name === "Battery Off")
+              ?.value || 0,
+          icon: Battery,
+          color: themeColors.primary,
+        },
+        {
           title: "Low Battery",
           value:
             alertDistributionData.find((d) => d.name === "Low Battery")
-              ?.value || 0,
-          icon: Battery,
-          color: themeColors.warning,
-        },
-        {
-          title: "Medium Battery",
-          value:
-            alertDistributionData.find((d) => d.name === "Medium Battery")
               ?.value || 0,
           icon: Battery,
           color: themeColors.warning,
@@ -1201,7 +1231,6 @@ const AdminDashboard = () => {
 
   return (
     <React.Fragment>
-      {/* Show all device cards overlay, but do not return early! */}
       {showAllDevices && (
         <div className="fixed inset-0 z-50 bg-black bg-opacity-60 flex flex-col items-center justify-center overflow-y-auto">
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-5xl w-full mx-auto p-8 relative">
@@ -1255,7 +1284,7 @@ const AdminDashboard = () => {
         {/* Enhanced Alert Type Selector - toggle button style for Tissue and Battery Alerts */}
         <div className="flex justify-center mb-6">
           <div
-            className="rounded-2xl p-4 shadow-lg border backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+            className="rounded-2xl p-4 shadow-lg border backdrop-blur-sm transition-all duration-300 hover:shadow-xl "
             style={{
               background:
                 selectedAlertType === "tissue"
@@ -1359,9 +1388,9 @@ const AdminDashboard = () => {
 
           {/* Recent Alerts Section (now in right column) */}
           <div
-            className="rounded-3xl p-6 shadow-lg border flex flex-col transition-all duration-300"
+            className="rounded-3xl p-4 shadow-lg border flex flex-col transition-all duration-300"
             style={{
-              background: themeColors.card,
+              background: themeColors.surface,
               borderColor: themeColors.border,
               boxShadow: `0 4px 12px ${themeColors.shadow}20`,
               transition: "background 0.3s, border-color 0.3s",
@@ -1393,6 +1422,7 @@ const AdminDashboard = () => {
                     style={{
                       background: themeColors.surface,
                       borderRadius: 18,
+
                       cursor: "pointer",
                       boxShadow: `0 2px 8px ${themeColors.shadow}10`,
                     }}

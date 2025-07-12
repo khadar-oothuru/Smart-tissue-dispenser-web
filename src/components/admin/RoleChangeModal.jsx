@@ -4,6 +4,16 @@ import { useTheme } from "../../context/ThemeContext";
 
 const RoleChangeModal = ({ visible, user, onRoleUpdate, onClose }) => {
   const { themeColors } = useTheme();
+  // Modal style config (mimic CustomAlert)
+  const isDark = document.documentElement.classList.contains("dark");
+  const safeThemeColors = {
+    surface: isDark ? "#1a1a1a" : "#fff",
+    heading: isDark ? "#fff" : "#000",
+    text: isDark ? "#e0e0e0" : "#333",
+    border: isDark ? "#333" : "#e0e0e0",
+    primary: themeColors?.primary || "#007AFF",
+    ...(themeColors || {}),
+  };
 
   if (!visible || !user) return null;
 
@@ -17,55 +27,75 @@ const RoleChangeModal = ({ visible, user, onRoleUpdate, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-md p-6 border border-gray-200 dark:border-gray-700">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center px-4 transition-all duration-300 ${
+        isDark ? "bg-black bg-opacity-70" : "bg-black bg-opacity-50"
+      }`}
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-md mx-auto p-8 rounded-[2.2rem] shadow-2xl transform transition-all duration-300 scale-100"
+        style={{ backgroundColor: safeThemeColors.surface }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Close button in top-right corner */}
+        <button
+          className={`absolute top-5 right-5 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 bg-red-500 bg-opacity-90`}
+          onClick={onClose}
+          style={{ boxShadow: "0 2px 8px 0 rgba(255,0,0,0.10)" }}
+        >
+          <X size={24} color="#fff" />
+        </button>
+
+        {/* Content Section */}
+        <div className="text-center mb-8 mt-2">
+          <h3
+            className="text-2xl font-extrabold mb-3 leading-relaxed tracking-tight"
+            style={{ color: safeThemeColors.heading }}
+          >
             Change User Role
           </h3>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-500 dark:text-gray-300 dark:hover:text-gray-200"
+          <p
+            className="text-lg leading-relaxed opacity-90 mb-1"
+            style={{ color: safeThemeColors.text }}
           >
-            <X className="h-5 w-5" />
-          </button>
+            Username: <span className="font-bold">{user.username}</span>
+          </p>
+          <p
+            className="text-lg leading-relaxed opacity-90 mb-4"
+            style={{ color: safeThemeColors.text }}
+          >
+            Current role:{" "}
+            <span className="font-bold">{user.role?.toUpperCase()}</span>
+          </p>
         </div>
 
-        {/* <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-          Change role for {user.first_name} {user.last_name}
-        </p> */}
-
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-          Username: <span className="font-semibold">{user.username}</span>
-        </p>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-          Current role:{" "}
-          <span className="font-semibold">{user.role?.toUpperCase()}</span>
-        </p>
-
-        <div className="space-y-3 mb-6">
+        {/* Role Options */}
+        <div className="space-y-5 mb-8">
           {/* User Role Option */}
           <button
-            className={`w-full flex items-center p-4 rounded-lg border ${
+            className={`w-full flex items-center p-5 rounded-2xl border-2 transition-all duration-150 text-left relative group focus:outline-none ${
               user.role === "user"
-                ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
-                : "border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+                ? "bg-[#181f2e] border-blue-500 shadow-lg scale-[1.01]"
+                : "bg-[#23272f] border-[#3a3f4b] hover:border-blue-400 hover:bg-[#232f3e]"
             }`}
             onClick={() => handleRoleChange("user")}
+            style={{ fontWeight: 600, minHeight: 90 }}
           >
-            <User className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-3" />
-            <div className="flex-1 text-left">
-              <p className="font-medium text-gray-900 dark:text-white">User</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+            <User className="h-6 w-6 text-blue-400 mr-4" />
+            <div className="flex-1">
+              <p className="font-bold text-lg text-white mb-1">User</p>
+              <p className="text-base text-gray-400">
                 Standard user with basic permissions
               </p>
             </div>
             {user.role === "user" && (
-              <div className="h-5 w-5 text-blue-600 dark:text-blue-400">
+              <span className="flex items-center justify-center h-7 w-7 rounded-full bg-blue-500">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 20 20"
                   fill="currentColor"
+                  className="h-5 w-5 text-white"
                 >
                   <path
                     fillRule="evenodd"
@@ -73,32 +103,34 @@ const RoleChangeModal = ({ visible, user, onRoleUpdate, onClose }) => {
                     clipRule="evenodd"
                   />
                 </svg>
-              </div>
+              </span>
             )}
           </button>
 
           {/* Admin Role Option */}
           <button
-            className={`w-full flex items-center p-4 rounded-lg border ${
+            className={`w-full flex items-center p-5 rounded-2xl border-2 transition-all duration-150 text-left relative group focus:outline-none ${
               user.role === "admin"
-                ? "bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800"
-                : "border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+                ? "bg-[#181f2e] border-purple-500 shadow-lg scale-[1.01]"
+                : "bg-[#23272f] border-[#3a3f4b] hover:border-purple-400 hover:bg-[#232f3e]"
             }`}
             onClick={() => handleRoleChange("admin")}
+            style={{ fontWeight: 600, minHeight: 90 }}
           >
-            <Shield className="h-5 w-5 text-purple-600 dark:text-purple-400 mr-3" />
-            <div className="flex-1 text-left">
-              <p className="font-medium text-gray-900 dark:text-white">Admin</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+            <Shield className="h-6 w-6 text-purple-400 mr-4" />
+            <div className="flex-1">
+              <p className="font-bold text-lg text-white mb-1">Admin</p>
+              <p className="text-base text-gray-400">
                 Full access to system management
               </p>
             </div>
             {user.role === "admin" && (
-              <div className="h-5 w-5 text-purple-600 dark:text-purple-400">
+              <span className="flex items-center justify-center h-7 w-7 rounded-full bg-purple-500">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 20 20"
                   fill="currentColor"
+                  className="h-5 w-5 text-white"
                 >
                   <path
                     fillRule="evenodd"
@@ -106,7 +138,7 @@ const RoleChangeModal = ({ visible, user, onRoleUpdate, onClose }) => {
                     clipRule="evenodd"
                   />
                 </svg>
-              </div>
+              </span>
             )}
           </button>
         </div>
@@ -114,7 +146,8 @@ const RoleChangeModal = ({ visible, user, onRoleUpdate, onClose }) => {
         <div className="flex justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-transparent rounded-md hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+            className="px-8 py-3 text-base font-semibold text-white bg-[#3a3f4b] rounded-xl hover:bg-[#23272f] transition-all duration-150"
+            style={{ minWidth: 120 }}
           >
             Cancel
           </button>

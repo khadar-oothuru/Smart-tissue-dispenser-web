@@ -53,83 +53,106 @@ const UserProfileModal = ({ visible, user, onClose }) => {
     </div>
   );
 
+  // Modal style config (mimic RoleChangeModal)
+  const isDark = document.documentElement.classList.contains("dark");
+  const safeThemeColors = {
+    surface: isDark ? "#181f2e" : "#fff",
+    heading: isDark ? "#fff" : "#000",
+    text: isDark ? "#e0e0e0" : "#333",
+    border: isDark ? "#333" : "#e0e0e0",
+    primary: themeColors?.primary || "#007AFF",
+    ...(themeColors || {}),
+  };
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col border border-gray-200 dark:border-gray-700">
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center px-4 transition-all duration-300 ${
+        isDark ? "bg-black bg-opacity-70" : "bg-black bg-opacity-50"
+      }`}
+    >
+      <div
+        className="relative w-full max-w-xl mx-auto p-10 rounded-[2.2rem] shadow-2xl transform transition-all duration-300 scale-100 flex flex-col max-h-[92vh] bg-[#181f2e] dark:bg-[#181f2e]"
+        style={{ backgroundColor: safeThemeColors.surface }}
+      >
+        {/* Close button in top-right corner */}
+        <button
+          className="absolute top-5 right-5 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 bg-red-500 bg-opacity-90 z-10"
+          onClick={onClose}
+          style={{ boxShadow: "0 2px 8px 0 rgba(255,0,0,0.10)" }}
+        >
+          <X size={24} color="#fff" />
+        </button>
+
         {/* Header */}
-        <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+        <div className="text-center mb-8 mt-2">
+          <h3
+            className="text-2xl font-extrabold mb-3 leading-relaxed tracking-tight"
+            style={{ color: safeThemeColors.heading }}
+          >
             User Profile {user.username ? `- ${user.username}` : ""}
           </h3>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-500 dark:text-gray-300 dark:hover:text-gray-200"
-          >
-            <X className="h-5 w-5" />
-          </button>
         </div>
 
         {/* Body */}
-        <div className="overflow-y-auto p-6">
-          {/* Profile Picture and Basic Info */}
-          <div className="flex flex-col items-center mb-6">
-            <div className="relative mb-4">
+        <div className="px-2 pb-2">
+          {/* Profile Picture, Name, and Badge Side by Side */}
+          <div className="flex flex-row items-center gap-6 mb-6 justify-center">
+            <div className="relative">
               {user.profile_picture ? (
                 <div className="relative">
                   <img
                     src={user.profile_picture}
                     alt={user.username}
-                    className="w-24 h-24 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700"
+                    className="w-24 h-24 rounded-full object-cover border-4 border-[#23272f] shadow-lg"
                   />
                   <button
                     onClick={() => setShowFullImage(true)}
-                    className="absolute top-0 right-0 bg-gray-800 bg-opacity-60 rounded-full p-1"
+                    className="absolute top-0 right-0 bg-gray-800 bg-opacity-70 rounded-full p-1.5 hover:scale-110 transition-all"
                   >
-                    <Maximize className="h-3 w-3 text-white" />
+                    <Maximize className="h-4 w-4 text-white" />
                   </button>
                   <div
-                    className={`absolute bottom-0 right-0 w-4 h-4 rounded-full border-2 border-white dark:border-gray-800 ${
+                    className={`absolute bottom-0 right-0 w-5 h-5 rounded-full border-2 border-white dark:border-[#23272f] ${
                       user.is_active ? "bg-green-500" : "bg-red-500"
                     }`}
                   />
                 </div>
               ) : (
-                <div className="w-24 h-24 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                  <User className="h-10 w-10 text-gray-400 dark:text-gray-500" />
+                <div className="w-24 h-24 rounded-full bg-[#23272f] flex items-center justify-center relative shadow-lg">
+                  <User className="h-12 w-12 text-gray-500" />
                   <div
-                    className={`absolute bottom-0 right-0 w-4 h-4 rounded-full border-2 border-white dark:border-gray-800 ${
+                    className={`absolute bottom-0 right-0 w-5 h-5 rounded-full border-2 border-white dark:border-[#23272f] ${
                       user.is_active ? "bg-green-500" : "bg-red-500"
                     }`}
                   />
                 </div>
               )}
             </div>
-            <h4 className="text-xl font-semibold text-gray-900 dark:text-white">
-              {user.username}
-            </h4>
-            <p className="text-gray-500 dark:text-gray-400 mb-2">
-              @{user.username}
-            </p>
-
-            <span
-              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                user.role === "admin"
-                  ? "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300"
-                  : "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
-              }`}
-            >
-              {user.role === "admin" ? (
-                <Shield className="h-3 w-3 mr-1" />
-              ) : (
-                <User className="h-3 w-3 mr-1" />
-              )}
-              {user.role.toUpperCase()}
-            </span>
+            <div className="flex flex-col items-start gap-1">
+              <h4 className="text-xl font-bold text-white mb-0 leading-tight">
+                {user.username}
+              </h4>
+              <p className="text-gray-400 mb-0 text-base">@{user.username}</p>
+              <span
+                className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold mt-1 ${
+                  user.role === "admin"
+                    ? "bg-purple-900/40 text-purple-300"
+                    : "bg-blue-900/40 text-blue-300"
+                }`}
+              >
+                {user.role === "admin" ? (
+                  <Shield className="h-4 w-4 mr-1" />
+                ) : (
+                  <User className="h-4 w-4 mr-1" />
+                )}
+                {user.role.toUpperCase()}
+              </span>
+            </div>
           </div>
 
           {/* User Information */}
-          <div className="mb-6">
-            <h5 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+          <div className="mb-8">
+            <h5 className="text-lg font-bold text-white mb-5">
               User Information
             </h5>
 
@@ -139,7 +162,6 @@ const UserProfileModal = ({ visible, user, onClose }) => {
               value={user.email || "Not provided"}
             />
 
-            {/* Remove first/last name, just show username */}
             <InfoItem
               icon={User}
               label="Username"
@@ -162,11 +184,7 @@ const UserProfileModal = ({ visible, user, onClose }) => {
               icon={CheckCircle}
               label="Account Status"
               value={user.is_active ? "Active" : "Inactive"}
-              color={
-                user.is_active
-                  ? "text-green-600 dark:text-green-400"
-                  : "text-red-600 dark:text-red-400"
-              }
+              color={user.is_active ? "text-green-400" : "text-red-400"}
             />
 
             {user.is_staff !== undefined && (
@@ -174,11 +192,7 @@ const UserProfileModal = ({ visible, user, onClose }) => {
                 icon={Shield}
                 label="Staff Status"
                 value={user.is_staff ? "Yes" : "No"}
-                color={
-                  user.is_staff
-                    ? "text-blue-600 dark:text-blue-400"
-                    : "text-gray-600 dark:text-gray-400"
-                }
+                color={user.is_staff ? "text-blue-400" : "text-gray-400"}
               />
             )}
 
@@ -187,11 +201,7 @@ const UserProfileModal = ({ visible, user, onClose }) => {
                 icon={Settings}
                 label="Superuser"
                 value={user.is_superuser ? "Yes" : "No"}
-                color={
-                  user.is_superuser
-                    ? "text-red-600 dark:text-red-400"
-                    : "text-gray-600 dark:text-gray-400"
-                }
+                color={user.is_superuser ? "text-red-400" : "text-gray-400"}
               />
             )}
           </div>
@@ -199,9 +209,7 @@ const UserProfileModal = ({ visible, user, onClose }) => {
           {/* Additional Stats if available */}
           {(user.device_count || user.last_activity) && (
             <div>
-              <h5 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                Activity
-              </h5>
+              <h5 className="text-lg font-bold text-white mb-5">Activity</h5>
 
               {user.device_count && (
                 <InfoItem
@@ -221,27 +229,27 @@ const UserProfileModal = ({ visible, user, onClose }) => {
             </div>
           )}
         </div>
-      </div>
 
-      {/* Full Screen Image Modal */}
-      {showFullImage && user.profile_picture && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50"
-          onClick={() => setShowFullImage(false)}
-        >
-          <button
+        {/* Full Screen Image Modal */}
+        {showFullImage && user.profile_picture && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50"
             onClick={() => setShowFullImage(false)}
-            className="absolute top-4 right-4 bg-black bg-opacity-50 rounded-full p-2 text-white"
           >
-            <X className="h-6 w-6" />
-          </button>
-          <img
-            src={user.profile_picture}
-            alt={user.username}
-            className="max-w-[90%] max-h-[90vh] object-contain"
-          />
-        </div>
-      )}
+            <button
+              onClick={() => setShowFullImage(false)}
+              className="absolute top-4 right-4 bg-black bg-opacity-50 rounded-full p-2 text-white"
+            >
+              <X className="h-6 w-6" />
+            </button>
+            <img
+              src={user.profile_picture}
+              alt={user.username}
+              className="max-w-[90%] max-h-[90vh] object-contain"
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 };

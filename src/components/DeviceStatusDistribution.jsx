@@ -278,21 +278,7 @@ const DeviceStatusDistribution = ({
 
   return (
     <div className="relative">
-      {onRefresh && (
-        <button
-          onClick={onRefresh}
-          disabled={isLoading}
-          className="absolute right-4 top-4 p-2 rounded-lg transition-all hover:bg-gray-100 dark:hover:bg-gray-700"
-          style={{ 
-            backgroundColor: themeColors.surface,
-            color: themeColors.text 
-          }}
-        >
-          <RefreshCw 
-            className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} 
-          />
-        </button>
-      )}
+      
       
       <DonutChart
         data={alertDistributionData}
