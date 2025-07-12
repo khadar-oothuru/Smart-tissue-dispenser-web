@@ -23,7 +23,7 @@ import RootRedirect from "./components/common/RootRedirect";
 import AdminDashboard from "./components/admin/AdminDashboard";
 import AdminProfile from "./components/Profile/AdminProfile";
 import UserManagement from "./components/admin/UserManagement";
-import AppLogs from "./components/Logs/AppLogs";
+import AppLogs from "./components/Report/AppLogs";
 
 // Page Components
 import Devices from "./components/Devices";
